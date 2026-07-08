@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-const CookieName = "token"
+const CookieName = "session"
 
 func (s *Service) RequireAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -15,13 +15,13 @@ func (s *Service) RequireAuth(next http.Handler) http.Handler {
 			return
 		}
 
-		claims, err := s.Verify(cookie.Value)
-		if err != nil {
+		userID, ok := s.sessions.Get(cookie.Value)
+		if !ok {
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), userIDKey, claims.UserID)
+		ctx := context.WithValue(r.Context(), userIDKey, userID)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

@@ -36,19 +36,25 @@ func LoginSubmit(svc *auth.Service) http.HandlerFunc {
 			Path:     "/",
 			HttpOnly: true,
 			SameSite: http.SameSiteLaxMode,
-			Expires:  time.Now().Add(24 * time.Hour),
+			MaxAge:   int((24 * time.Hour).Seconds()),
 		})
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 	}
 }
 
-func Logout(w http.ResponseWriter, r *http.Request) {
-	http.SetCookie(w, &http.Cookie{
-		Name:     auth.CookieName,
-		Value:    "",
-		Path:     "/",
-		HttpOnly: true,
-		MaxAge:   -1,
-	})
-	http.Redirect(w, r, "/login", http.StatusSeeOther)
+func Logout(svc *auth.Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if cookie, err := r.Cookie(auth.CookieName); err == nil {
+			svc.Logout(cookie.Value)
+		}
+
+		http.SetCookie(w, &http.Cookie{
+			Name:     auth.CookieName,
+			Value:    "",
+			Path:     "/",
+			HttpOnly: true,
+			MaxAge:   -1,
+		})
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+	}
 }

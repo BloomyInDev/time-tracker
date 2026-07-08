@@ -28,7 +28,7 @@ func main() {
 	mux.HandleFunc("GET /", handlers.Home)
 	mux.HandleFunc("GET /login", handlers.Login)
 	mux.HandleFunc("POST /login", handlers.LoginSubmit(authSvc))
-	mux.HandleFunc("GET /logout", handlers.Logout)
+	mux.HandleFunc("GET /logout", handlers.Logout(authSvc))
 
 	mux.Handle("GET /clients", authSvc.RequireAuth(handlers.ListClients(conn)))
 	mux.Handle("POST /clients", authSvc.RequireAuth(handlers.CreateClient(conn)))
