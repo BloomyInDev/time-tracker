@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	"github.com/bloomyindev/time-tracker/internal/db"
-	"github.com/bloomyindev/time-tracker/internal/models"
 	"github.com/bloomyindev/time-tracker/internal/service/auth"
 	"github.com/bloomyindev/time-tracker/internal/templates"
 )
@@ -76,22 +75,19 @@ func ClientDetail(conn *sql.DB) http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		assignedIDs := make(map[int64]bool, len(assigned))
+		for _, t := range assigned {
+			assignedIDs[t.ID] = true
+		}
 
 		allTypes, err := db.ListTaskTypes(conn, userID)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-
-		assignedIDs := make(map[int64]bool, len(assigned))
-		for _, t := range assigned {
-			assignedIDs[t.ID] = true
-		}
-		var available []models.TaskType
-		for _, t := range allTypes {
-			if !assignedIDs[t.ID] {
-				available = append(available, t)
-			}
+		taskTypeChoices := make([]templates.TaskTypeChoice, len(allTypes))
+		for i, t := range allTypes {
+			taskTypeChoices[i] = templates.TaskTypeChoice{TaskType: t, Assigned: assignedIDs[t.ID]}
 		}
 
 		tasks, err := db.ListTasksByClient(conn, userID, id)
@@ -104,11 +100,11 @@ func ClientDetail(conn *sql.DB) http.HandlerFunc {
 			totalHours += t.HoursSpent
 		}
 
-		templates.ClientDetail(client, assigned, available, tasks, totalHours).Render(r.Context(), w)
+		templates.ClientDetail(client, taskTypeChoices, tasks, totalHours).Render(r.Context(), w)
 	}
 }
 
-func AssignTaskType(conn *sql.DB) http.HandlerFunc {
+func SyncClientTaskTypes(conn *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, _ := auth.UserIDFromContext(r.Context())
 		clientID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
@@ -125,46 +121,34 @@ func AssignTaskType(conn *sql.DB) http.HandlerFunc {
 			http.Error(w, "bad request", http.StatusBadRequest)
 			return
 		}
-		taskTypeID, err := strconv.ParseInt(r.FormValue("task_type_id"), 10, 64)
-		if err != nil {
-			http.Error(w, "invalid task_type_id", http.StatusBadRequest)
-			return
-		}
-		if _, err := db.GetTaskType(conn, userID, taskTypeID); err != nil {
-			http.Error(w, "task type not found", http.StatusNotFound)
-			return
+
+		checked := make(map[int64]bool)
+		for _, raw := range r.Form["task_type_id"] {
+			id, err := strconv.ParseInt(raw, 10, 64)
+			if err != nil {
+				http.Error(w, "invalid task_type_id", http.StatusBadRequest)
+				return
+			}
+			checked[id] = true
 		}
 
-		if err := db.AssignTaskTypeToClient(conn, clientID, taskTypeID); err != nil {
+		allTypes, err := db.ListTaskTypes(conn, userID)
+		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		http.Redirect(w, r, "/clients/"+strconv.FormatInt(clientID, 10), http.StatusSeeOther)
-	}
-}
-
-func UnassignTaskType(conn *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		userID, _ := auth.UserIDFromContext(r.Context())
-		clientID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-		if err != nil {
-			http.Error(w, "invalid id", http.StatusBadRequest)
-			return
-		}
-		if _, err := db.GetClient(conn, userID, clientID); err != nil {
-			http.Error(w, "client not found", http.StatusNotFound)
-			return
-		}
-		taskTypeID, err := strconv.ParseInt(r.PathValue("taskTypeID"), 10, 64)
-		if err != nil {
-			http.Error(w, "invalid task_type_id", http.StatusBadRequest)
-			return
+		for _, t := range allTypes {
+			if checked[t.ID] {
+				err = db.AssignTaskTypeToClient(conn, clientID, t.ID)
+			} else {
+				err = db.UnassignTaskTypeFromClient(conn, clientID, t.ID)
+			}
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
 		}
 
-		if err := db.UnassignTaskTypeFromClient(conn, clientID, taskTypeID); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
 		http.Redirect(w, r, "/clients/"+strconv.FormatInt(clientID, 10), http.StatusSeeOther)
 	}
 }

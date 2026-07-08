@@ -2,6 +2,11 @@ package templates
 
 import "github.com/bloomyindev/time-tracker/internal/models"
 
+type TaskTypeChoice struct {
+	TaskType models.TaskType
+	Assigned bool
+}
+
 templ Clients(clients []models.Client) {
 	@Layout("Clients") {
 		<section class="section">
@@ -23,14 +28,14 @@ templ Clients(clients []models.Client) {
 					<thead>
 						<tr>
 							<th>Name</th>
-							<th></th>
+							<th class="has-text-right"></th>
 						</tr>
 					</thead>
 					<tbody>
 						for _, c := range clients {
 							<tr>
 								<td>{ c.Name }</td>
-								<td>
+								<td class="has-text-right">
 									<a class="button is-small" href={ templ.URL("/clients/" + itoa(c.ID)) }>Manage task types</a>
 									<form method="post" action={ templ.URL("/clients/" + itoa(c.ID) + "/delete") } style="display:inline">
 										<button class="button is-small is-danger" type="submit">Delete</button>
@@ -45,7 +50,7 @@ templ Clients(clients []models.Client) {
 	}
 }
 
-templ ClientDetail(client models.Client, assigned []models.TaskType, available []models.TaskType, tasks []models.Task, totalHours float64) {
+templ ClientDetail(client models.Client, taskTypes []TaskTypeChoice, tasks []models.Task, totalHours float64) {
 	@Layout(client.Name) {
 		<section class="section">
 			<div class="container">
@@ -65,7 +70,7 @@ templ ClientDetail(client models.Client, assigned []models.TaskType, available [
 							<tr>
 								<td>{ t.Title }</td>
 								<td>{ formatHours(t.HoursSpent) }</td>
-								<td>{ t.Date.Format("2006-01-02") }</td>
+								<td>{ t.Date.Format("02/01/2006") }</td>
 							</tr>
 						}
 					</tbody>
@@ -73,45 +78,21 @@ templ ClientDetail(client models.Client, assigned []models.TaskType, available [
 
 				<h2 class="subtitle">Task types allowed for this client</h2>
 
-				<table class="table is-fullwidth">
-					<thead>
-						<tr>
-							<th>Name</th>
-							<th></th>
-						</tr>
-					</thead>
-					<tbody>
-						for _, t := range assigned {
-							<tr>
-								<td>{ t.Name }</td>
-								<td>
-									<form method="post" action={ templ.URL("/clients/" + itoa(client.ID) + "/task-types/" + itoa(t.ID) + "/delete") }>
-										<button class="button is-small is-danger" type="submit">Remove</button>
-									</form>
-								</td>
-							</tr>
-						}
-					</tbody>
-				</table>
-
-				if len(available) > 0 {
-					<form method="post" action={ templ.URL("/clients/" + itoa(client.ID) + "/task-types") } class="box">
-						<div class="field has-addons">
-							<div class="control is-expanded">
-								<div class="select is-fullwidth">
-									<select name="task_type_id">
-										for _, t := range available {
-											<option value={ itoa(t.ID) }>{ t.Name }</option>
-										}
-									</select>
-								</div>
-							</div>
-							<div class="control">
-								<button class="button is-primary" type="submit">Assign</button>
-							</div>
+				<form method="post" action={ templ.URL("/clients/" + itoa(client.ID) + "/task-types") } class="box">
+					for _, choice := range taskTypes {
+						<div class="field">
+							<label class="checkbox">
+								<input type="checkbox" name="task_type_id" value={ itoa(choice.TaskType.ID) } checked?={ choice.Assigned }/>
+								{ choice.TaskType.Name }
+							</label>
 						</div>
-					</form>
-				}
+					}
+					<div class="field">
+						<div class="control">
+							<button class="button is-primary" type="submit">Save</button>
+						</div>
+					</div>
+				</form>
 			</div>
 		</section>
 	}
