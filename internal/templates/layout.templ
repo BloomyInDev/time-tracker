@@ -13,6 +13,7 @@ templ Layout(title string) {
 			<title>{ title }</title>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<link rel="stylesheet" href="/static/css/style.css"/>
+			<script src="https://unpkg.com/lucide@1.23.0"></script>
 		</head>
 		<body>
 			<nav class="navbar" role="navigation" aria-label="main navigation">
@@ -23,18 +24,46 @@ templ Layout(title string) {
 				</div>
 				<div class="navbar-menu">
 					<div class="navbar-start">
-						<a class="navbar-item" href="/clients">{ i18n.T(ctx, "nav.clients") }</a>
-						<a class="navbar-item" href="/task-types">{ i18n.T(ctx, "nav.task_types") }</a>
-						<a class="navbar-item" href="/tasks">{ i18n.T(ctx, "nav.tasks") }</a>
+						<a class="navbar-item" href="/clients">
+							<i data-lucide="users"></i>
+							{ i18n.T(ctx, "nav.clients") }
+						</a>
+						<a class="navbar-item" href="/task-types">
+							<i data-lucide="tag"></i>
+							{ i18n.T(ctx, "nav.task_types") }
+						</a>
+						<a class="navbar-item" href="/tasks">
+							<i data-lucide="list-checks"></i>
+							{ i18n.T(ctx, "nav.tasks") }
+						</a>
 					</div>
 					<div class="navbar-end">
-						<a class="navbar-item" href="/lang/en">EN</a>
-						<a class="navbar-item" href="/lang/fr">FR</a>
-						<a class="navbar-item" href="/logout">{ i18n.T(ctx, "nav.logout") }</a>
+						<div class="navbar-item has-dropdown is-hoverable">
+							<a class="navbar-link">
+								<i data-lucide="globe"></i>
+								{ ctxi18n.Locale(ctx).Code().String() }
+							</a>
+							<div class="navbar-dropdown is-right">
+								<a class="navbar-item" href="/lang/en">EN</a>
+								<a class="navbar-item" href="/lang/fr">FR</a>
+							</div>
+						</div>
+						<div class="navbar-item has-dropdown is-hoverable">
+							<a class="navbar-link">
+								<i data-lucide="user"></i>
+							</a>
+							<div class="navbar-dropdown is-right">
+								<a class="navbar-item" href="/logout">
+									<i data-lucide="log-out"></i>
+									{ i18n.T(ctx, "nav.logout") }
+								</a>
+							</div>
+						</div>
 					</div>
 				</div>
 			</nav>
 			{ children... }
+			<script>lucide.createIcons();</script>
 		</body>
 	</html>
 }

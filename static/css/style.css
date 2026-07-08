@@ -3,3 +3,14 @@
 .table tr.day-header {
 	background-color: var(--bulma-background);
 }
+
+[data-lucide] {
+	width: 16px;
+	height: 16px;
+	vertical-align: -3px;
+	margin-right: 0.4em;
+}
+
+.navbar-link [data-lucide] {
+	margin-right: 0.35em;
+}

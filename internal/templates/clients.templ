@@ -22,7 +22,10 @@ templ Clients(clients []models.Client) {
 							<input class="input" type="text" name="name" placeholder={ i18n.T(ctx, "clients.name_placeholder") } required/>
 						</div>
 						<div class="control">
-							<button class="button is-primary" type="submit">{ i18n.T(ctx, "clients.add") }</button>
+							<button class="button is-primary" type="submit">
+								<i data-lucide="plus"></i>
+								{ i18n.T(ctx, "clients.add") }
+							</button>
 						</div>
 					</div>
 				</form>
@@ -39,9 +42,15 @@ templ Clients(clients []models.Client) {
 							<tr>
 								<td>{ c.Name }</td>
 								<td class="has-text-right">
-									<a class="button is-small" href={ templ.URL("/clients/" + itoa(c.ID)) }>{ i18n.T(ctx, "clients.manage_task_types") }</a>
+									<a class="button is-small" href={ templ.URL("/clients/" + itoa(c.ID)) }>
+										<i data-lucide="tag"></i>
+										{ i18n.T(ctx, "clients.manage_task_types") }
+									</a>
 									<form method="post" action={ templ.URL("/clients/" + itoa(c.ID) + "/delete") } style="display:inline">
-										<button class="button is-small is-danger" type="submit">{ i18n.T(ctx, "clients.delete") }</button>
+										<button class="button is-small is-danger" type="submit">
+											<i data-lucide="trash-2"></i>
+											{ i18n.T(ctx, "clients.delete") }
+										</button>
 									</form>
 								</td>
 							</tr>
@@ -92,7 +101,10 @@ templ ClientDetail(client models.Client, taskTypes []TaskTypeChoice, tasks []mod
 					}
 					<div class="field">
 						<div class="control">
-							<button class="button is-primary" type="submit">{ i18n.T(ctx, "clients.save") }</button>
+							<button class="button is-primary" type="submit">
+								<i data-lucide="save"></i>
+								{ i18n.T(ctx, "clients.save") }
+							</button>
 						</div>
 					</div>
 				</form>
