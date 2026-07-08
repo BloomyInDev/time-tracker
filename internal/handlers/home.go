@@ -1,11 +1,7 @@
 package handlers
 
-import (
-	"net/http"
-
-	"github.com/bloomyindev/time-tracker/internal/templates"
-)
+import "net/http"
 
 func Home(w http.ResponseWriter, r *http.Request) {
-	templates.Home().Render(r.Context(), w)
+	http.Redirect(w, r, "/tasks", http.StatusSeeOther)
 }

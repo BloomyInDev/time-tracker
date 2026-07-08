@@ -34,8 +34,7 @@ func main() {
 	mux.Handle("POST /clients", authSvc.RequireAuth(handlers.CreateClient(conn)))
 	mux.Handle("GET /clients/{id}", authSvc.RequireAuth(handlers.ClientDetail(conn)))
 	mux.Handle("POST /clients/{id}/delete", authSvc.RequireAuth(handlers.DeleteClient(conn)))
-	mux.Handle("POST /clients/{id}/task-types", authSvc.RequireAuth(handlers.AssignTaskType(conn)))
-	mux.Handle("POST /clients/{id}/task-types/{taskTypeID}/delete", authSvc.RequireAuth(handlers.UnassignTaskType(conn)))
+	mux.Handle("POST /clients/{id}/task-types", authSvc.RequireAuth(handlers.SyncClientTaskTypes(conn)))
 
 	mux.Handle("GET /task-types", authSvc.RequireAuth(handlers.ListTaskTypes(conn)))
 	mux.Handle("POST /task-types", authSvc.RequireAuth(handlers.CreateTaskType(conn)))
@@ -43,6 +42,8 @@ func main() {
 
 	mux.Handle("GET /tasks", authSvc.RequireAuth(handlers.ListTasks(conn)))
 	mux.Handle("POST /tasks", authSvc.RequireAuth(handlers.CreateTask(conn)))
+	mux.Handle("GET /tasks/{id}/edit", authSvc.RequireAuth(handlers.EditTaskForm(conn)))
+	mux.Handle("POST /tasks/{id}/update", authSvc.RequireAuth(handlers.UpdateTask(conn)))
 	mux.Handle("POST /tasks/{id}/delete", authSvc.RequireAuth(handlers.DeleteTask(conn)))
 
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
