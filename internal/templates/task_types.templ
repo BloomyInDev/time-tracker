@@ -23,14 +23,14 @@ templ TaskTypes(types []models.TaskType) {
 					<thead>
 						<tr>
 							<th>Name</th>
-							<th></th>
+							<th class="has-text-right"></th>
 						</tr>
 					</thead>
 					<tbody>
 						for _, t := range types {
 							<tr>
 								<td>{ t.Name }</td>
-								<td>
+								<td class="has-text-right">
 									<form method="post" action={ templ.URL("/task-types/" + itoa(t.ID) + "/delete") }>
 										<button class="button is-small is-danger" type="submit">Delete</button>
 									</form>
