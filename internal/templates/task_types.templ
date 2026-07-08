@@ -1,0 +1,45 @@
+package templates
+
+import "github.com/bloomyindev/time-tracker/internal/models"
+
+templ TaskTypes(types []models.TaskType) {
+	@Layout("Task Types") {
+		<section class="section">
+			<div class="container">
+				<h1 class="title">Task Types</h1>
+
+				<form method="post" action="/task-types" class="box">
+					<div class="field has-addons">
+						<div class="control is-expanded">
+							<input class="input" type="text" name="name" placeholder="Task type name" required/>
+						</div>
+						<div class="control">
+							<button class="button is-primary" type="submit">Add</button>
+						</div>
+					</div>
+				</form>
+
+				<table class="table is-fullwidth">
+					<thead>
+						<tr>
+							<th>Name</th>
+							<th></th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, t := range types {
+							<tr>
+								<td>{ t.Name }</td>
+								<td>
+									<form method="post" action={ templ.URL("/task-types/" + itoa(t.ID) + "/delete") }>
+										<button class="button is-small is-danger" type="submit">Delete</button>
+									</form>
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		</section>
+	}
+}
