@@ -1,9 +1,31 @@
 package templates
 
-import "strconv"
+import (
+	"strconv"
+
+	"github.com/bloomyindev/time-tracker/internal/models"
+)
 
 func itoa(id int64) string {
 	return strconv.FormatInt(id, 10)
+}
+
+func clientName(clients []models.Client, id int64) string {
+	for _, c := range clients {
+		if c.ID == id {
+			return c.Name
+		}
+	}
+	return ""
+}
+
+func taskTypeName(types []models.TaskType, id int64) string {
+	for _, t := range types {
+		if t.ID == id {
+			return t.Name
+		}
+	}
+	return ""
 }
 
 func formatHours(h float64) string {

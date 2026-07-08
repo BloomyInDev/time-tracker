@@ -65,6 +65,8 @@ templ Tasks(clients []models.Client, types []models.TaskType, byClient map[int64
 					<thead>
 						<tr>
 							<th>{ i18n.T(ctx, "tasks.col_title") }</th>
+							<th>{ i18n.T(ctx, "tasks.col_client") }</th>
+							<th>{ i18n.T(ctx, "tasks.col_task_type") }</th>
 							<th>{ i18n.T(ctx, "tasks.col_hours") }</th>
 							<th class="has-text-right"></th>
 						</tr>
@@ -72,13 +74,15 @@ templ Tasks(clients []models.Client, types []models.TaskType, byClient map[int64
 					<tbody>
 						for _, day := range days {
 							<tr class="day-header">
-								<td><strong>{ day.Date }</strong></td>
+								<td colspan="3"><strong>{ day.Date }</strong></td>
 								<td><strong>{ formatHours(day.Hours) }</strong></td>
 								<td></td>
 							</tr>
 							for _, t := range day.Tasks {
 								<tr>
 									<td>{ t.Title }</td>
+									<td>{ clientName(clients, t.ClientID) }</td>
+									<td>{ taskTypeName(types, t.TaskTypeID) }</td>
 									<td>{ formatHours(t.HoursSpent) }</td>
 									<td class="has-text-right">
 										<a class="button is-small" href={ templ.URL("/tasks/" + itoa(t.ID) + "/edit") }>

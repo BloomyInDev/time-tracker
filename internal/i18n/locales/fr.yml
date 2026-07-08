@@ -37,6 +37,8 @@ fr:
     hours_placeholder: "Heures"
     add: "Ajouter"
     col_title: "Titre"
+    col_client: "Client"
+    col_task_type: "Type de tâche"
     col_hours: "Heures"
     edit: "Modifier"
     delete: "Supprimer"

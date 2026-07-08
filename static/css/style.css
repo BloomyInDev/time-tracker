@@ -14,3 +14,8 @@
 .navbar-link [data-lucide] {
 	margin-right: 0.35em;
 }
+
+.table td.has-text-right > .button:not(:first-child),
+.table td.has-text-right > form:not(:first-child) {
+	margin-left: 0.5rem;
+}
