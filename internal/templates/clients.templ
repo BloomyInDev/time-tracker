@@ -31,7 +31,8 @@ templ Clients(clients []models.Client) {
 							<tr>
 								<td>{ c.Name }</td>
 								<td>
-									<form method="post" action={ templ.URL("/clients/" + itoa(c.ID) + "/delete") }>
+									<a class="button is-small" href={ templ.URL("/clients/" + itoa(c.ID)) }>Manage task types</a>
+									<form method="post" action={ templ.URL("/clients/" + itoa(c.ID) + "/delete") } style="display:inline">
 										<button class="button is-small is-danger" type="submit">Delete</button>
 									</form>
 								</td>
@@ -39,6 +40,57 @@ templ Clients(clients []models.Client) {
 						}
 					</tbody>
 				</table>
+			</div>
+		</section>
+	}
+}
+
+templ ClientDetail(client models.Client, assigned []models.TaskType, available []models.TaskType) {
+	@Layout(client.Name) {
+		<section class="section">
+			<div class="container">
+				<h1 class="title">{ client.Name }</h1>
+				<h2 class="subtitle">Task types allowed for this client</h2>
+
+				<table class="table is-fullwidth">
+					<thead>
+						<tr>
+							<th>Name</th>
+							<th></th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, t := range assigned {
+							<tr>
+								<td>{ t.Name }</td>
+								<td>
+									<form method="post" action={ templ.URL("/clients/" + itoa(client.ID) + "/task-types/" + itoa(t.ID) + "/delete") }>
+										<button class="button is-small is-danger" type="submit">Remove</button>
+									</form>
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+
+				if len(available) > 0 {
+					<form method="post" action={ templ.URL("/clients/" + itoa(client.ID) + "/task-types") } class="box">
+						<div class="field has-addons">
+							<div class="control is-expanded">
+								<div class="select is-fullwidth">
+									<select name="task_type_id">
+										for _, t := range available {
+											<option value={ itoa(t.ID) }>{ t.Name }</option>
+										}
+									</select>
+								</div>
+							</div>
+							<div class="control">
+								<button class="button is-primary" type="submit">Assign</button>
+							</div>
+						</div>
+					</form>
+				}
 			</div>
 		</section>
 	}
