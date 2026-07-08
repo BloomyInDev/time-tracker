@@ -12,6 +12,11 @@ import (
 
 var ErrInvalidCredentials = errors.New("invalid credentials")
 
+type Claims struct {
+	UserID int64 `json:"uid"`
+	jwt.RegisteredClaims
+}
+
 type Service struct {
 	db     *sql.DB
 	secret []byte
@@ -49,17 +54,20 @@ func (s *Service) Login(email, password string) (string, error) {
 }
 
 func (s *Service) issueToken(user models.User) (string, error) {
-	claims := jwt.RegisteredClaims{
-		Subject:   user.Email,
-		ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
-		IssuedAt:  jwt.NewNumericDate(time.Now()),
+	claims := Claims{
+		UserID: user.ID,
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   user.Email,
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(s.secret)
 }
 
-func (s *Service) Verify(tokenString string) (*jwt.RegisteredClaims, error) {
-	claims := &jwt.RegisteredClaims{}
+func (s *Service) Verify(tokenString string) (*Claims, error) {
+	claims := &Claims{}
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (any, error) {
 		return s.secret, nil
 	})

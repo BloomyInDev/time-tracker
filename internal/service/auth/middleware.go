@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"net/http"
 	"strings"
 )
@@ -14,11 +15,13 @@ func (s *Service) RequireAuth(next http.Handler) http.Handler {
 			return
 		}
 
-		if _, err := s.Verify(tokenString); err != nil {
+		claims, err := s.Verify(tokenString)
+		if err != nil {
 			http.Error(w, "invalid token", http.StatusUnauthorized)
 			return
 		}
 
-		next.ServeHTTP(w, r)
+		ctx := context.WithValue(r.Context(), userIDKey, claims.UserID)
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
