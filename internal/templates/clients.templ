@@ -62,35 +62,72 @@ templ Clients(clients []models.Client) {
 	}
 }
 
-templ ClientDetail(client models.Client, taskTypes []TaskTypeChoice, tasks []models.Task, totalHours float64, periods []models.Period, selectedPeriodID int64) {
+templ ClientDetail(client models.Client, taskTypes []TaskTypeChoice, tasks []models.Task, totalHours float64, hoursByType map[int64]float64, allTypes []models.TaskType, periods []models.Period, selectedPeriodID int64, selectedTaskTypeID int64) {
 	@Layout(client.Name) {
 		<section class="section">
 			<div class="container">
 				<h1 class="title">{ client.Name }</h1>
 				<h2 class="subtitle">{ i18n.T(ctx, "clients.hours_logged", i18n.M{"hours": formatHours(totalHours)}) }</h2>
 
-				if len(periods) > 0 {
+				if len(periods) > 0 || len(allTypes) > 0 {
 					<form method="get" class="box">
-						<div class="field">
-							<label class="label">{ i18n.T(ctx, "clients.filter_by_period") }</label>
-							<div class="control">
-								<div class="select">
-									<select name="period_id" onchange="this.form.submit()">
-										<option value="" selected?={ selectedPeriodID == 0 }>{ i18n.T(ctx, "clients.all_periods") }</option>
-										for _, p := range periods {
-											<option value={ itoa(p.ID) } selected?={ p.ID == selectedPeriodID }>{ p.Name }</option>
-										}
-									</select>
+						<div class="field is-grouped">
+							if len(periods) > 0 {
+								<div class="control">
+									<label class="label">{ i18n.T(ctx, "clients.filter_by_period") }</label>
+									<div class="select">
+										<select name="period_id" onchange="this.form.submit()">
+											<option value="" selected?={ selectedPeriodID == 0 }>{ i18n.T(ctx, "clients.all_periods") }</option>
+											for _, p := range periods {
+												<option value={ itoa(p.ID) } selected?={ p.ID == selectedPeriodID }>{ p.Name }</option>
+											}
+										</select>
+									</div>
 								</div>
-							</div>
+							}
+							if len(allTypes) > 0 {
+								<div class="control">
+									<label class="label">{ i18n.T(ctx, "clients.filter_by_task_type") }</label>
+									<div class="select">
+										<select name="task_type_id" onchange="this.form.submit()">
+											<option value="" selected?={ selectedTaskTypeID == 0 }>{ i18n.T(ctx, "clients.all_task_types") }</option>
+											for _, t := range allTypes {
+												<option value={ itoa(t.ID) } selected?={ t.ID == selectedTaskTypeID }>{ t.Name }</option>
+											}
+										</select>
+									</div>
+								</div>
+							}
 						</div>
 					</form>
+				}
+
+				if len(hoursByType) > 0 {
+					<table class="table is-fullwidth is-narrow">
+						<thead>
+							<tr>
+								<th>{ i18n.T(ctx, "clients.col_task_type") }</th>
+								<th>{ i18n.T(ctx, "clients.col_hours") }</th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, t := range allTypes {
+								if h, ok := hoursByType[t.ID]; ok {
+									<tr>
+										<td>{ t.Name }</td>
+										<td>{ formatHours(h) }</td>
+									</tr>
+								}
+							}
+						</tbody>
+					</table>
 				}
 
 				<table class="table is-fullwidth is-hoverable">
 					<thead>
 						<tr>
 							<th>{ i18n.T(ctx, "clients.col_title") }</th>
+							<th>{ i18n.T(ctx, "clients.col_task_type") }</th>
 							<th>{ i18n.T(ctx, "clients.col_period") }</th>
 							<th>{ i18n.T(ctx, "clients.col_hours") }</th>
 							<th>{ i18n.T(ctx, "clients.col_date") }</th>
@@ -100,6 +137,7 @@ templ ClientDetail(client models.Client, taskTypes []TaskTypeChoice, tasks []mod
 						for _, t := range tasks {
 							<tr>
 								<td>{ t.Title }</td>
+								<td>{ taskTypeName(allTypes, t.TaskTypeID) }</td>
 								<td>{ periodName(periods, t.PeriodID) }</td>
 								<td>{ formatHours(t.HoursSpent) }</td>
 								<td>{ t.Date.Format("02/01/2006") }</td>

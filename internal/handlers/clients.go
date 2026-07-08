@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	"github.com/bloomyindev/time-tracker/internal/db"
-	"github.com/bloomyindev/time-tracker/internal/models"
 	"github.com/bloomyindev/time-tracker/internal/service/auth"
 	"github.com/bloomyindev/time-tracker/internal/templates"
 )
@@ -105,23 +104,28 @@ func ClientDetail(conn *sql.DB) http.HandlerFunc {
 				return
 			}
 		}
-
-		var tasks []models.Task
-		if selectedPeriodID != 0 {
-			tasks, err = db.ListTasksByClientAndPeriod(conn, userID, id, selectedPeriodID)
-		} else {
-			tasks, err = db.ListTasksByClient(conn, userID, id)
+		var selectedTaskTypeID int64
+		if raw := r.URL.Query().Get("task_type_id"); raw != "" {
+			selectedTaskTypeID, err = strconv.ParseInt(raw, 10, 64)
+			if err != nil {
+				http.Error(w, "invalid task_type_id", http.StatusBadRequest)
+				return
+			}
 		}
+
+		tasks, err := db.ListTasksByClientFiltered(conn, userID, id, selectedPeriodID, selectedTaskTypeID)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 		var totalHours float64
+		hoursByType := make(map[int64]float64)
 		for _, t := range tasks {
 			totalHours += t.HoursSpent
+			hoursByType[t.TaskTypeID] += t.HoursSpent
 		}
 
-		templates.ClientDetail(client, taskTypeChoices, tasks, totalHours, periods, selectedPeriodID).Render(r.Context(), w)
+		templates.ClientDetail(client, taskTypeChoices, tasks, totalHours, hoursByType, allTypes, periods, selectedPeriodID, selectedTaskTypeID).Render(r.Context(), w)
 	}
 }
 

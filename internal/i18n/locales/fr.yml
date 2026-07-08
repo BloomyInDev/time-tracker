@@ -26,9 +26,12 @@ fr:
     col_period: "Période"
     col_hours: "Heures"
     col_date: "Date"
+    col_task_type: "Type de tâche"
     task_types_allowed: "Types de tâches autorisés pour ce client"
     filter_by_period: "Filtrer par période"
     all_periods: "Toutes les périodes"
+    filter_by_task_type: "Filtrer par type de tâche"
+    all_task_types: "Tous les types de tâche"
     save: "Enregistrer"
   task_types:
     title: "Types de tâches"

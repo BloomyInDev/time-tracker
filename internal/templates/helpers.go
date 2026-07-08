@@ -38,7 +38,7 @@ func periodName(periods []models.Period, id int64) string {
 }
 
 func formatHours(h float64) string {
-	return strconv.FormatFloat(h, 'f', 2, 64)
+	return strconv.FormatFloat(h, 'f', 3, 64)
 }
 
 // serializeClientTaskTypes encodes a client_id -> task_type_ids map as

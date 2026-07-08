@@ -56,34 +56,23 @@ func ListTasks(conn *sql.DB, userID int64) ([]models.Task, error) {
 	return tasks, rows.Err()
 }
 
-func ListTasksByClient(conn *sql.DB, userID, clientID int64) ([]models.Task, error) {
-	rows, err := conn.Query(
-		`SELECT id, user_id, client_id, task_type_id, period_id, title, hours_spent, date FROM tasks
-		 WHERE user_id = ? AND client_id = ? ORDER BY date DESC, id DESC`,
-		userID, clientID,
-	)
-	if err != nil {
-		return nil, err
+// ListTasksByClientFiltered lists a client's tasks, optionally narrowed by
+// period and/or task type. A zero id for either filter means "any".
+func ListTasksByClientFiltered(conn *sql.DB, userID, clientID, periodID, taskTypeID int64) ([]models.Task, error) {
+	query := `SELECT id, user_id, client_id, task_type_id, period_id, title, hours_spent, date FROM tasks
+		 WHERE user_id = ? AND client_id = ?`
+	args := []any{userID, clientID}
+	if periodID != 0 {
+		query += ` AND period_id = ?`
+		args = append(args, periodID)
 	}
-	defer rows.Close()
-
-	var tasks []models.Task
-	for rows.Next() {
-		var t models.Task
-		if err := scanTask(rows, &t); err != nil {
-			return nil, err
-		}
-		tasks = append(tasks, t)
+	if taskTypeID != 0 {
+		query += ` AND task_type_id = ?`
+		args = append(args, taskTypeID)
 	}
-	return tasks, rows.Err()
-}
+	query += ` ORDER BY date DESC, id DESC`
 
-func ListTasksByClientAndPeriod(conn *sql.DB, userID, clientID, periodID int64) ([]models.Task, error) {
-	rows, err := conn.Query(
-		`SELECT id, user_id, client_id, task_type_id, period_id, title, hours_spent, date FROM tasks
-		 WHERE user_id = ? AND client_id = ? AND period_id = ? ORDER BY date DESC, id DESC`,
-		userID, clientID, periodID,
-	)
+	rows, err := conn.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
