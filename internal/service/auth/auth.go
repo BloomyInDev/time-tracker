@@ -1,0 +1,61 @@
+package auth
+
+import (
+	"database/sql"
+	"errors"
+	"time"
+
+	"github.com/bloomyindev/time-tracker/internal/models"
+	"github.com/golang-jwt/jwt/v5"
+	"golang.org/x/crypto/bcrypt"
+)
+
+var ErrInvalidCredentials = errors.New("invalid credentials")
+
+type Service struct {
+	db     *sql.DB
+	secret []byte
+}
+
+func NewService(db *sql.DB, secret string) *Service {
+	return &Service{db: db, secret: []byte(secret)}
+}
+
+func (s *Service) Login(email, password string) (string, error) {
+	var user models.User
+	err := s.db.QueryRow(`SELECT id, email, password_hash FROM users WHERE email = ?`, email).
+		Scan(&user.ID, &user.Email, &user.PasswordHash)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", ErrInvalidCredentials
+	}
+	if err != nil {
+		return "", err
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
+		return "", ErrInvalidCredentials
+	}
+
+	return s.issueToken(user)
+}
+
+func (s *Service) issueToken(user models.User) (string, error) {
+	claims := jwt.RegisteredClaims{
+		Subject:   user.Email,
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+		IssuedAt:  jwt.NewNumericDate(time.Now()),
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString(s.secret)
+}
+
+func (s *Service) Verify(tokenString string) (*jwt.RegisteredClaims, error) {
+	claims := &jwt.RegisteredClaims{}
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (any, error) {
+		return s.secret, nil
+	})
+	if err != nil || !token.Valid {
+		return nil, errors.New("invalid token")
+	}
+	return claims, nil
+}
