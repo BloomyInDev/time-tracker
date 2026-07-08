@@ -5,6 +5,7 @@ package i18n
 import (
 	"embed"
 	"net/http"
+	"slices"
 
 	"github.com/invopop/ctxi18n"
 )
@@ -44,10 +45,5 @@ func Middleware(next http.Handler) http.Handler {
 }
 
 func isSupported(code string) bool {
-	for _, l := range SupportedLocales {
-		if l == code {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(SupportedLocales, code)
 }
