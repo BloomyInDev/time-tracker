@@ -1,0 +1,60 @@
+package templates
+
+import (
+	"github.com/bloomyindev/time-tracker/internal/models"
+	"github.com/invopop/ctxi18n/i18n"
+)
+
+templ Account(user models.User, errMsg string, successMsg string) {
+	@Layout(i18n.T(ctx, "account.title")) {
+		<section class="section">
+			<div class="container">
+				<div class="columns is-centered">
+					<div class="column is-one-third">
+						<h1 class="title">{ i18n.T(ctx, "account.title") }</h1>
+						<div class="box">
+							<div class="field">
+								<label class="label">{ i18n.T(ctx, "account.email") }</label>
+								<div class="control">
+									<input class="input" type="email" value={ user.Email } disabled/>
+								</div>
+							</div>
+						</div>
+
+						<h2 class="subtitle">{ i18n.T(ctx, "account.change_password") }</h2>
+						<div class="box">
+							if errMsg != "" {
+								<p class="notification is-danger">{ errMsg }</p>
+							}
+							if successMsg != "" {
+								<p class="notification is-success">{ successMsg }</p>
+							}
+							<form method="post" action="/account/password">
+								<div class="field">
+									<label class="label">{ i18n.T(ctx, "account.current_password") }</label>
+									<div class="control">
+										<input class="input" type="password" name="current_password" required/>
+									</div>
+								</div>
+								<div class="field">
+									<label class="label">{ i18n.T(ctx, "account.new_password") }</label>
+									<div class="control">
+										<input class="input" type="password" name="new_password" required minlength="8"/>
+									</div>
+								</div>
+								<div class="field">
+									<div class="control">
+										<button class="button is-primary" type="submit">
+											<i data-lucide="save"></i>
+											{ i18n.T(ctx, "account.save") }
+										</button>
+									</div>
+								</div>
+							</form>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+	}
+}

@@ -69,6 +69,26 @@ func (s *Service) Logout(token string) {
 	s.sessions.Delete(token)
 }
 
+// ChangePassword verifies currentPassword against the stored hash before
+// updating it, so a hijacked session cookie alone isn't enough to lock
+// the real owner out.
+func (s *Service) ChangePassword(userID int64, currentPassword, newPassword string) error {
+	var hash string
+	if err := s.db.QueryRow(`SELECT password_hash FROM users WHERE id = ?`, userID).Scan(&hash); err != nil {
+		return err
+	}
+	if err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(currentPassword)); err != nil {
+		return ErrInvalidCredentials
+	}
+
+	newHash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	_, err = s.db.Exec(`UPDATE users SET password_hash = ? WHERE id = ?`, string(newHash), userID)
+	return err
+}
+
 // IssueAPIToken mints a signed JWT for the given credentials. Kept for a
 // future bearer-token API flow; not used by the SSR cookie login.
 func (s *Service) IssueAPIToken(email, password string) (string, error) {

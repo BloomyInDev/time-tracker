@@ -62,6 +62,9 @@ func main() {
 	mux.Handle("POST /tasks/{id}/update", authSvc.RequireAuth(handlers.UpdateTask(conn)))
 	mux.Handle("POST /tasks/{id}/delete", authSvc.RequireAuth(handlers.DeleteTask(conn)))
 
+	mux.Handle("GET /account", authSvc.RequireAuth(handlers.Account(conn)))
+	mux.Handle("POST /account/password", authSvc.RequireAuth(handlers.ChangePassword(conn, authSvc)))
+
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", cfg.Port), i18n.Middleware(mux)))

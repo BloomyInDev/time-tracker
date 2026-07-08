@@ -5,6 +5,7 @@ en:
     task_types: "Task Types"
     tasks: "Tasks"
     periods: "Periods"
+    account: "My Account"
     logout: "Logout"
   login:
     title: "Login"
@@ -63,3 +64,12 @@ en:
     label_hours: "Hours spent"
     label_date: "Date"
     save: "Save"
+  account:
+    title: "My Account"
+    email: "Email"
+    change_password: "Change password"
+    current_password: "Current password"
+    new_password: "New password"
+    save: "Save"
+    wrong_current_password: "Current password is incorrect"
+    password_changed: "Password updated"

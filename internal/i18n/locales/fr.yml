@@ -5,6 +5,7 @@ fr:
     task_types: "Types de tâches"
     tasks: "Tâches"
     periods: "Périodes"
+    account: "Mon compte"
     logout: "Déconnexion"
   login:
     title: "Connexion"
@@ -63,3 +64,12 @@ fr:
     label_hours: "Heures passées"
     label_date: "Date"
     save: "Enregistrer"
+  account:
+    title: "Mon compte"
+    email: "Email"
+    change_password: "Changer le mot de passe"
+    current_password: "Mot de passe actuel"
+    new_password: "Nouveau mot de passe"
+    save: "Enregistrer"
+    wrong_current_password: "Mot de passe actuel incorrect"
+    password_changed: "Mot de passe mis à jour"

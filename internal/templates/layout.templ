@@ -24,6 +24,10 @@ templ Layout(title string) {
 				</div>
 				<div class="navbar-menu">
 					<div class="navbar-start">
+						<a class="navbar-item" href="/tasks">
+							<i data-lucide="list-checks"></i>
+							{ i18n.T(ctx, "nav.tasks") }
+						</a>
 						<a class="navbar-item" href="/clients">
 							<i data-lucide="users"></i>
 							{ i18n.T(ctx, "nav.clients") }
@@ -31,10 +35,6 @@ templ Layout(title string) {
 						<a class="navbar-item" href="/task-types">
 							<i data-lucide="tag"></i>
 							{ i18n.T(ctx, "nav.task_types") }
-						</a>
-						<a class="navbar-item" href="/tasks">
-							<i data-lucide="list-checks"></i>
-							{ i18n.T(ctx, "nav.tasks") }
 						</a>
 						<a class="navbar-item" href="/periods">
 							<i data-lucide="calendar-range"></i>
@@ -57,6 +57,10 @@ templ Layout(title string) {
 								<i data-lucide="user"></i>
 							</a>
 							<div class="navbar-dropdown is-right">
+								<a class="navbar-item" href="/account">
+									<i data-lucide="settings"></i>
+									{ i18n.T(ctx, "nav.account") }
+								</a>
 								<a class="navbar-item" href="/logout">
 									<i data-lucide="log-out"></i>
 									{ i18n.T(ctx, "nav.logout") }
