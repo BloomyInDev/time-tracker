@@ -58,7 +58,7 @@ templ Tasks(clients []models.Client, types []models.TaskType, byClient map[int64
 					</div>
 				</form>
 
-				<table class="table is-fullwidth">
+				<table class="table is-fullwidth is-hoverable">
 					<thead>
 						<tr>
 							<th>{ i18n.T(ctx, "tasks.col_title") }</th>
@@ -68,7 +68,7 @@ templ Tasks(clients []models.Client, types []models.TaskType, byClient map[int64
 					</thead>
 					<tbody>
 						for _, day := range days {
-							<tr class="has-background-light">
+							<tr class="day-header">
 								<td><strong>{ day.Date }</strong></td>
 								<td><strong>{ formatHours(day.Hours) }</strong></td>
 								<td></td>

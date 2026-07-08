@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -14,6 +15,10 @@ import (
 
 func main() {
 	cfg := config.Load()
+
+	dbPath := flag.String("db-path", cfg.DBPath, "path to the sqlite database file (env: DB_PATH)")
+	flag.Parse()
+	cfg.DBPath = *dbPath
 
 	if err := i18n.Load(); err != nil {
 		log.Fatalf("load locales: %v", err)

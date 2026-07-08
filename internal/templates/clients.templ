@@ -27,7 +27,7 @@ templ Clients(clients []models.Client) {
 					</div>
 				</form>
 
-				<table class="table is-fullwidth">
+				<table class="table is-fullwidth is-hoverable">
 					<thead>
 						<tr>
 							<th>{ i18n.T(ctx, "clients.name") }</th>
@@ -60,7 +60,7 @@ templ ClientDetail(client models.Client, taskTypes []TaskTypeChoice, tasks []mod
 				<h1 class="title">{ client.Name }</h1>
 				<h2 class="subtitle">{ i18n.T(ctx, "clients.hours_logged", i18n.M{"hours": formatHours(totalHours)}) }</h2>
 
-				<table class="table is-fullwidth">
+				<table class="table is-fullwidth is-hoverable">
 					<thead>
 						<tr>
 							<th>{ i18n.T(ctx, "clients.col_title") }</th>
