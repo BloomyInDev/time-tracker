@@ -31,8 +31,13 @@ func ListTasks(conn *sql.DB) http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		byClient, err := db.ListTaskTypesByClient(conn, userID)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 
-		templates.Tasks(tasks, clients, types).Render(r.Context(), w)
+		templates.Tasks(tasks, clients, types, byClient).Render(r.Context(), w)
 	}
 }
 
@@ -63,6 +68,25 @@ func CreateTask(conn *sql.DB) http.HandlerFunc {
 		if err != nil {
 			http.Error(w, "invalid date", http.StatusBadRequest)
 			return
+		}
+
+		allowed, err := db.ListTaskTypesForClient(conn, clientID)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if len(allowed) > 0 {
+			ok := false
+			for _, t := range allowed {
+				if t.ID == taskTypeID {
+					ok = true
+					break
+				}
+			}
+			if !ok {
+				http.Error(w, "task type not allowed for this client", http.StatusBadRequest)
+				return
+			}
 		}
 
 		_, err = db.CreateTask(conn, models.Task{

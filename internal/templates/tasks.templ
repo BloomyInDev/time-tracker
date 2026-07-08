@@ -2,13 +2,19 @@ package templates
 
 import "github.com/bloomyindev/time-tracker/internal/models"
 
-templ Tasks(tasks []models.Task, clients []models.Client, types []models.TaskType) {
+templ Tasks(tasks []models.Task, clients []models.Client, types []models.TaskType, byClient map[int64][]int64) {
 	@Layout("Tasks") {
 		<section class="section">
 			<div class="container">
 				<h1 class="title">Tasks</h1>
 
-				<form method="post" action="/tasks" class="box">
+				<form
+					method="post"
+					action="/tasks"
+					class="box"
+					id="task-form"
+					data-client-task-types={ serializeClientTaskTypes(byClient) }
+				>
 					<div class="field">
 						<label class="label">Title</label>
 						<div class="control">
@@ -19,7 +25,7 @@ templ Tasks(tasks []models.Task, clients []models.Client, types []models.TaskTyp
 						<label class="label">Client</label>
 						<div class="control">
 							<div class="select">
-								<select name="client_id">
+								<select name="client_id" id="task-client-select">
 									for _, c := range clients {
 										<option value={ itoa(c.ID) }>{ c.Name }</option>
 									}
@@ -31,7 +37,7 @@ templ Tasks(tasks []models.Task, clients []models.Client, types []models.TaskTyp
 						<label class="label">Task Type</label>
 						<div class="control">
 							<div class="select">
-								<select name="task_type_id">
+								<select name="task_type_id" id="task-type-select">
 									for _, t := range types {
 										<option value={ itoa(t.ID) }>{ t.Name }</option>
 									}
@@ -84,5 +90,6 @@ templ Tasks(tasks []models.Task, clients []models.Client, types []models.TaskTyp
 				</table>
 			</div>
 		</section>
+		<script src="/static/js/task-filter.js"></script>
 	}
 }
