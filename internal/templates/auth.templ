@@ -1,14 +1,16 @@
 package templates
 
-templ Login() {
+templ Login(errMsg string) {
 	@Layout("Login") {
 		<section class="section">
 			<div class="container">
 				<div class="columns is-centered">
 					<div class="column is-one-third">
 						<div class="box">
-							<p id="login-error" class="notification is-danger is-hidden"></p>
-							<form id="login-form">
+							if errMsg != "" {
+								<p class="notification is-danger">{ errMsg }</p>
+							}
+							<form method="post" action="/login">
 								<div class="field">
 									<label class="label">Email</label>
 									<div class="control">
@@ -32,6 +34,5 @@ templ Login() {
 				</div>
 			</div>
 		</section>
-		<script src="/static/js/login.js"></script>
 	}
 }
