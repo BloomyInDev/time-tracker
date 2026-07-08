@@ -10,6 +10,7 @@ tool (
 require (
 	github.com/a-h/templ v0.3.1020
 	github.com/golang-jwt/jwt/v5 v5.3.1
+	github.com/urfave/cli/v3 v3.10.1
 	golang.org/x/crypto v0.53.0
 	modernc.org/sqlite v1.53.0
 )
