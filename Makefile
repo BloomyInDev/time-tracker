@@ -1,6 +1,6 @@
 BINARY := time-tracker
 
-.PHONY: build run test clean generate
+.PHONY: build run dev test clean generate
 
 generate:
 	go tool templ generate
@@ -14,5 +14,10 @@ run: build
 test:
 	go test ./...
 
+dev:
+	go tool templ generate --watch --proxy="http://localhost:8080" --proxyport=7331 --open-browser=false & \
+	trap 'kill %1' EXIT; \
+	go tool air
+
 clean:
-	rm -rf bin
+	rm -rf bin tmp

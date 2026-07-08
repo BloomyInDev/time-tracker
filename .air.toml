@@ -1,0 +1,18 @@
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  cmd = "go build -o ./tmp/time-tracker ./cmd/server"
+  entrypoint = "./tmp/time-tracker"
+  include_ext = ["go"]
+  exclude_dir = ["tmp", "bin", "static"]
+  delay = 100
+
+[log]
+  time = false
+
+[color]
+  main = "magenta"
+  watcher = "cyan"
+  build = "yellow"
+  runner = "green"
