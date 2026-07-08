@@ -1,12 +1,15 @@
 BINARY := time-tracker
 
-.PHONY: build run dev test clean generate
+.PHONY: build build-cli run dev test clean generate
 
 generate:
 	go tool templ generate
 
 build: generate
 	go build -o bin/$(BINARY) ./cmd/server
+
+build-cli:
+	go build -o bin/cli ./cmd/cli
 
 run: build
 	./bin/$(BINARY)
@@ -20,4 +23,4 @@ dev:
 	go tool air
 
 clean:
-	rm -rf bin tmp
+	rm -rf bin tmp *.db
