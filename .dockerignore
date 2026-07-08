@@ -1,0 +1,5 @@
+.git
+bin
+tmp
+*.db
+*_templ.go
