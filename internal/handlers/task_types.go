@@ -2,12 +2,12 @@ package handlers
 
 import (
 	"database/sql"
-	"encoding/json"
 	"net/http"
 	"strconv"
 
 	"github.com/bloomyindev/time-tracker/internal/db"
 	"github.com/bloomyindev/time-tracker/internal/service/auth"
+	"github.com/bloomyindev/time-tracker/internal/templates"
 )
 
 func ListTaskTypes(conn *sql.DB) http.HandlerFunc {
@@ -18,53 +18,23 @@ func ListTaskTypes(conn *sql.DB) http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		writeJSON(w, types)
+		templates.TaskTypes(types).Render(r.Context(), w)
 	}
 }
 
 func CreateTaskType(conn *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, _ := auth.UserIDFromContext(r.Context())
-
-		var body struct {
-			Name string `json:"name"`
-		}
-		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		if err := r.ParseForm(); err != nil {
 			http.Error(w, "bad request", http.StatusBadRequest)
 			return
 		}
 
-		taskType, err := db.CreateTaskType(conn, userID, body.Name)
-		if err != nil {
+		if _, err := db.CreateTaskType(conn, userID, r.FormValue("name")); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		writeJSON(w, taskType)
-	}
-}
-
-func UpdateTaskType(conn *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		userID, _ := auth.UserIDFromContext(r.Context())
-		id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-		if err != nil {
-			http.Error(w, "invalid id", http.StatusBadRequest)
-			return
-		}
-
-		var body struct {
-			Name string `json:"name"`
-		}
-		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-			http.Error(w, "bad request", http.StatusBadRequest)
-			return
-		}
-
-		if err := db.UpdateTaskType(conn, userID, id, body.Name); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		w.WriteHeader(http.StatusNoContent)
+		http.Redirect(w, r, "/task-types", http.StatusSeeOther)
 	}
 }
 
@@ -81,6 +51,6 @@ func DeleteTaskType(conn *sql.DB) http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		w.WriteHeader(http.StatusNoContent)
+		http.Redirect(w, r, "/task-types", http.StatusSeeOther)
 	}
 }

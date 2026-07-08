@@ -28,21 +28,19 @@ func main() {
 	mux.HandleFunc("GET /", handlers.Home)
 	mux.HandleFunc("GET /login", handlers.Login)
 	mux.HandleFunc("POST /login", handlers.LoginSubmit(authSvc))
+	mux.HandleFunc("GET /logout", handlers.Logout)
 
-	mux.Handle("GET /api/clients", authSvc.RequireAuth(handlers.ListClients(conn)))
-	mux.Handle("POST /api/clients", authSvc.RequireAuth(handlers.CreateClient(conn)))
-	mux.Handle("PUT /api/clients/{id}", authSvc.RequireAuth(handlers.UpdateClient(conn)))
-	mux.Handle("DELETE /api/clients/{id}", authSvc.RequireAuth(handlers.DeleteClient(conn)))
+	mux.Handle("GET /clients", authSvc.RequireAuth(handlers.ListClients(conn)))
+	mux.Handle("POST /clients", authSvc.RequireAuth(handlers.CreateClient(conn)))
+	mux.Handle("POST /clients/{id}/delete", authSvc.RequireAuth(handlers.DeleteClient(conn)))
 
-	mux.Handle("GET /api/task-types", authSvc.RequireAuth(handlers.ListTaskTypes(conn)))
-	mux.Handle("POST /api/task-types", authSvc.RequireAuth(handlers.CreateTaskType(conn)))
-	mux.Handle("PUT /api/task-types/{id}", authSvc.RequireAuth(handlers.UpdateTaskType(conn)))
-	mux.Handle("DELETE /api/task-types/{id}", authSvc.RequireAuth(handlers.DeleteTaskType(conn)))
+	mux.Handle("GET /task-types", authSvc.RequireAuth(handlers.ListTaskTypes(conn)))
+	mux.Handle("POST /task-types", authSvc.RequireAuth(handlers.CreateTaskType(conn)))
+	mux.Handle("POST /task-types/{id}/delete", authSvc.RequireAuth(handlers.DeleteTaskType(conn)))
 
-	mux.Handle("GET /api/tasks", authSvc.RequireAuth(handlers.ListTasks(conn)))
-	mux.Handle("POST /api/tasks", authSvc.RequireAuth(handlers.CreateTask(conn)))
-	mux.Handle("PUT /api/tasks/{id}", authSvc.RequireAuth(handlers.UpdateTask(conn)))
-	mux.Handle("DELETE /api/tasks/{id}", authSvc.RequireAuth(handlers.DeleteTask(conn)))
+	mux.Handle("GET /tasks", authSvc.RequireAuth(handlers.ListTasks(conn)))
+	mux.Handle("POST /tasks", authSvc.RequireAuth(handlers.CreateTask(conn)))
+	mux.Handle("POST /tasks/{id}/delete", authSvc.RequireAuth(handlers.DeleteTask(conn)))
 
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
