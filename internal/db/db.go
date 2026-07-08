@@ -25,6 +25,12 @@ CREATE TABLE IF NOT EXISTS task_types (
 	name TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS task_types_for_client (
+	client_id INTEGER NOT NULL REFERENCES clients(id),
+	task_type_id INTEGER NOT NULL REFERENCES task_types(id),
+	PRIMARY KEY (client_id, task_type_id)
+);
+
 CREATE TABLE IF NOT EXISTS tasks (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
 	user_id INTEGER NOT NULL REFERENCES users(id),
