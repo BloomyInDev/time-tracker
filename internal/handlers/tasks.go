@@ -37,23 +37,44 @@ func ListTasks(conn *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		templates.Tasks(tasks, clients, types, byClient, dailyTotals(tasks)).Render(r.Context(), w)
+		templates.Tasks(clients, types, byClient, groupByDay(tasks), time.Now().Format("2006-01-02")).Render(r.Context(), w)
 	}
 }
 
-// dailyTotals groups tasks (already ordered by date desc) into per-day
-// hour sums for display above the task list.
-func dailyTotals(tasks []models.Task) []templates.DailyTotal {
-	var totals []templates.DailyTotal
+// groupByDay buckets tasks (already ordered by date desc) into per-day
+// groups with a running total, for a single table showing each day's
+// total followed by that day's tasks.
+func groupByDay(tasks []models.Task) []templates.DayGroup {
+	var groups []templates.DayGroup
 	for _, t := range tasks {
-		date := t.Date.Format("2006-01-02")
-		if len(totals) > 0 && totals[len(totals)-1].Date == date {
-			totals[len(totals)-1].Hours += t.HoursSpent
+		date := t.Date.Format("02/01/2006")
+		if len(groups) > 0 && groups[len(groups)-1].Date == date {
+			last := &groups[len(groups)-1]
+			last.Hours += t.HoursSpent
+			last.Tasks = append(last.Tasks, t)
 			continue
 		}
-		totals = append(totals, templates.DailyTotal{Date: date, Hours: t.HoursSpent})
+		groups = append(groups, templates.DayGroup{Date: date, Hours: t.HoursSpent, Tasks: []models.Task{t}})
 	}
-	return totals
+	return groups
+}
+
+// taskTypeAllowedForClient enforces that a task type is one of the
+// client's configured task types, when the client has any configured.
+func taskTypeAllowedForClient(conn *sql.DB, clientID, taskTypeID int64) (bool, error) {
+	allowed, err := db.ListTaskTypesForClient(conn, clientID)
+	if err != nil {
+		return false, err
+	}
+	if len(allowed) == 0 {
+		return true, nil
+	}
+	for _, t := range allowed {
+		if t.ID == taskTypeID {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 func CreateTask(conn *sql.DB) http.HandlerFunc {
@@ -85,26 +106,112 @@ func CreateTask(conn *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		allowed, err := db.ListTaskTypesForClient(conn, clientID)
+		ok, err := taskTypeAllowedForClient(conn, clientID, taskTypeID)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		if len(allowed) > 0 {
-			ok := false
-			for _, t := range allowed {
-				if t.ID == taskTypeID {
-					ok = true
-					break
-				}
-			}
-			if !ok {
-				http.Error(w, "task type not allowed for this client", http.StatusBadRequest)
-				return
-			}
+		if !ok {
+			http.Error(w, "task type not allowed for this client", http.StatusBadRequest)
+			return
 		}
 
 		_, err = db.CreateTask(conn, models.Task{
+			UserID:     userID,
+			ClientID:   clientID,
+			TaskTypeID: taskTypeID,
+			Title:      r.FormValue("title"),
+			HoursSpent: hoursSpent,
+			Date:       date,
+		})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		http.Redirect(w, r, "/tasks", http.StatusSeeOther)
+	}
+}
+
+func EditTaskForm(conn *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, _ := auth.UserIDFromContext(r.Context())
+		id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+		if err != nil {
+			http.Error(w, "invalid id", http.StatusBadRequest)
+			return
+		}
+
+		task, err := db.GetTask(conn, userID, id)
+		if err != nil {
+			http.Error(w, "task not found", http.StatusNotFound)
+			return
+		}
+		clients, err := db.ListClients(conn, userID)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		types, err := db.ListTaskTypes(conn, userID)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		templates.EditTask(task, clients, types).Render(r.Context(), w)
+	}
+}
+
+func UpdateTask(conn *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, _ := auth.UserIDFromContext(r.Context())
+		id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+		if err != nil {
+			http.Error(w, "invalid id", http.StatusBadRequest)
+			return
+		}
+		if _, err := db.GetTask(conn, userID, id); err != nil {
+			http.Error(w, "task not found", http.StatusNotFound)
+			return
+		}
+
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "bad request", http.StatusBadRequest)
+			return
+		}
+
+		clientID, err := strconv.ParseInt(r.FormValue("client_id"), 10, 64)
+		if err != nil {
+			http.Error(w, "invalid client_id", http.StatusBadRequest)
+			return
+		}
+		taskTypeID, err := strconv.ParseInt(r.FormValue("task_type_id"), 10, 64)
+		if err != nil {
+			http.Error(w, "invalid task_type_id", http.StatusBadRequest)
+			return
+		}
+		hoursSpent, err := strconv.ParseFloat(r.FormValue("hours_spent"), 64)
+		if err != nil {
+			http.Error(w, "invalid hours_spent", http.StatusBadRequest)
+			return
+		}
+		date, err := time.Parse("2006-01-02", r.FormValue("date"))
+		if err != nil {
+			http.Error(w, "invalid date", http.StatusBadRequest)
+			return
+		}
+
+		ok, err := taskTypeAllowedForClient(conn, clientID, taskTypeID)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if !ok {
+			http.Error(w, "task type not allowed for this client", http.StatusBadRequest)
+			return
+		}
+
+		err = db.UpdateTask(conn, models.Task{
+			ID:         id,
 			UserID:     userID,
 			ClientID:   clientID,
 			TaskTypeID: taskTypeID,

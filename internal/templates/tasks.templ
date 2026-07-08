@@ -2,12 +2,13 @@ package templates
 
 import "github.com/bloomyindev/time-tracker/internal/models"
 
-type DailyTotal struct {
+type DayGroup struct {
 	Date  string
 	Hours float64
+	Tasks []models.Task
 }
 
-templ Tasks(tasks []models.Task, clients []models.Client, types []models.TaskType, byClient map[int64][]int64, daily []DailyTotal) {
+templ Tasks(clients []models.Client, types []models.TaskType, byClient map[int64][]int64, days []DayGroup, today string) {
 	@Layout("Tasks") {
 		<section class="section">
 			<div class="container">
@@ -20,14 +21,10 @@ templ Tasks(tasks []models.Task, clients []models.Client, types []models.TaskTyp
 					id="task-form"
 					data-client-task-types={ serializeClientTaskTypes(byClient) }
 				>
-					<div class="field">
-						<label class="label">Title</label>
-						<div class="control">
-							<input class="input" type="text" name="title" required/>
+					<div class="field is-grouped">
+						<div class="control is-expanded">
+							<input class="input" type="text" name="title" placeholder="Title" required/>
 						</div>
-					</div>
-					<div class="field">
-						<label class="label">Client</label>
 						<div class="control">
 							<div class="select">
 								<select name="client_id" id="task-client-select">
@@ -37,9 +34,6 @@ templ Tasks(tasks []models.Task, clients []models.Client, types []models.TaskTyp
 								</select>
 							</div>
 						</div>
-					</div>
-					<div class="field">
-						<label class="label">Task Type</label>
 						<div class="control">
 							<div class="select">
 								<select name="task_type_id" id="task-type-select">
@@ -49,70 +43,110 @@ templ Tasks(tasks []models.Task, clients []models.Client, types []models.TaskTyp
 								</select>
 							</div>
 						</div>
-					</div>
-					<div class="field">
-						<label class="label">Hours spent</label>
 						<div class="control">
-							<input class="input" type="number" step="0.25" name="hours_spent" required/>
+							<input class="input" type="number" step="0.25" name="hours_spent" placeholder="Hours" style="width: 6em" required/>
 						</div>
-					</div>
-					<div class="field">
-						<label class="label">Date</label>
 						<div class="control">
-							<input class="input" type="date" name="date" required/>
+							<input class="input" type="date" name="date" value={ today }/>
 						</div>
-					</div>
-					<div class="field">
 						<div class="control">
 							<button class="button is-primary" type="submit">Add</button>
 						</div>
 					</div>
 				</form>
 
-				<h2 class="subtitle">Hours per day</h2>
-				<table class="table is-fullwidth">
-					<thead>
-						<tr>
-							<th>Date</th>
-							<th>Total hours</th>
-						</tr>
-					</thead>
-					<tbody>
-						for _, d := range daily {
-							<tr>
-								<td>{ d.Date }</td>
-								<td>{ formatHours(d.Hours) }</td>
-							</tr>
-						}
-					</tbody>
-				</table>
-
 				<table class="table is-fullwidth">
 					<thead>
 						<tr>
 							<th>Title</th>
 							<th>Hours</th>
-							<th>Date</th>
-							<th></th>
+							<th class="has-text-right"></th>
 						</tr>
 					</thead>
 					<tbody>
-						for _, t := range tasks {
-							<tr>
-								<td>{ t.Title }</td>
-								<td>{ formatHours(t.HoursSpent) }</td>
-								<td>{ t.Date.Format("2006-01-02") }</td>
-								<td>
-									<form method="post" action={ templ.URL("/tasks/" + itoa(t.ID) + "/delete") }>
-										<button class="button is-small is-danger" type="submit">Delete</button>
-									</form>
-								</td>
+						for _, day := range days {
+							<tr class="has-background-light">
+								<td><strong>{ day.Date }</strong></td>
+								<td><strong>{ formatHours(day.Hours) }</strong></td>
+								<td></td>
 							</tr>
+							for _, t := range day.Tasks {
+								<tr>
+									<td>{ t.Title }</td>
+									<td>{ formatHours(t.HoursSpent) }</td>
+									<td class="has-text-right">
+										<a class="button is-small" href={ templ.URL("/tasks/" + itoa(t.ID) + "/edit") }>Edit</a>
+										<form method="post" action={ templ.URL("/tasks/" + itoa(t.ID) + "/delete") } style="display:inline">
+											<button class="button is-small is-danger" type="submit">Delete</button>
+										</form>
+									</td>
+								</tr>
+							}
 						}
 					</tbody>
 				</table>
 			</div>
 		</section>
 		<script src="/static/js/task-filter.js"></script>
+	}
+}
+
+templ EditTask(task models.Task, clients []models.Client, types []models.TaskType) {
+	@Layout("Edit Task") {
+		<section class="section">
+			<div class="container">
+				<h1 class="title">Edit Task</h1>
+
+				<form method="post" action={ templ.URL("/tasks/" + itoa(task.ID) + "/update") } class="box">
+					<div class="field">
+						<label class="label">Title</label>
+						<div class="control">
+							<input class="input" type="text" name="title" value={ task.Title } required/>
+						</div>
+					</div>
+					<div class="field">
+						<label class="label">Client</label>
+						<div class="control">
+							<div class="select">
+								<select name="client_id">
+									for _, c := range clients {
+										<option value={ itoa(c.ID) } selected?={ c.ID == task.ClientID }>{ c.Name }</option>
+									}
+								</select>
+							</div>
+						</div>
+					</div>
+					<div class="field">
+						<label class="label">Task Type</label>
+						<div class="control">
+							<div class="select">
+								<select name="task_type_id">
+									for _, t := range types {
+										<option value={ itoa(t.ID) } selected?={ t.ID == task.TaskTypeID }>{ t.Name }</option>
+									}
+								</select>
+							</div>
+						</div>
+					</div>
+					<div class="field">
+						<label class="label">Hours spent</label>
+						<div class="control">
+							<input class="input" type="number" step="0.25" name="hours_spent" value={ formatHours(task.HoursSpent) } required/>
+						</div>
+					</div>
+					<div class="field">
+						<label class="label">Date</label>
+						<div class="control">
+							<input class="input" type="date" name="date" value={ task.Date.Format("2006-01-02") } required/>
+						</div>
+					</div>
+					<div class="field">
+						<div class="control">
+							<button class="button is-primary" type="submit">Save</button>
+						</div>
+					</div>
+				</form>
+			</div>
+		</section>
 	}
 }
