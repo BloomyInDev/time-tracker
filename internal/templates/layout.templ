@@ -10,6 +10,18 @@ templ Layout(title string) {
 			<link rel="stylesheet" href="/static/css/style.css"/>
 		</head>
 		<body>
+			<nav class="navbar" role="navigation" aria-label="main navigation">
+				<div class="navbar-brand">
+					<a class="navbar-item" href="/">
+						<strong>Time Tracker</strong>
+					</a>
+				</div>
+				<div class="navbar-menu">
+					<div class="navbar-end">
+						<a class="navbar-item" href="/login">Login</a>
+					</div>
+				</div>
+			</nav>
 			{ children... }
 		</body>
 	</html>
