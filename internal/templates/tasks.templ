@@ -11,7 +11,7 @@ type DayGroup struct {
 	Tasks []models.Task
 }
 
-templ Tasks(clients []models.Client, types []models.TaskType, byClient map[int64][]int64, days []DayGroup, today string) {
+templ Tasks(clients []models.Client, types []models.TaskType, periods []models.Period, byClient map[int64][]int64, days []DayGroup, today string, defaultPeriodID int64) {
 	@Layout(i18n.T(ctx, "tasks.title")) {
 		<section class="section">
 			<div class="container">
@@ -46,6 +46,17 @@ templ Tasks(clients []models.Client, types []models.TaskType, byClient map[int64
 								</select>
 							</div>
 						</div>
+						if len(periods) > 0 {
+							<div class="control">
+								<div class="select">
+									<select name="period_id">
+										for _, p := range periods {
+											<option value={ itoa(p.ID) } selected?={ p.ID == defaultPeriodID }>{ p.Name }</option>
+										}
+									</select>
+								</div>
+							</div>
+						}
 						<div class="control">
 							<input class="input" type="number" step="0.25" name="hours_spent" placeholder={ i18n.T(ctx, "tasks.hours_placeholder") } style="width: 6em" required/>
 						</div>
@@ -67,6 +78,7 @@ templ Tasks(clients []models.Client, types []models.TaskType, byClient map[int64
 							<th>{ i18n.T(ctx, "tasks.col_title") }</th>
 							<th>{ i18n.T(ctx, "tasks.col_client") }</th>
 							<th>{ i18n.T(ctx, "tasks.col_task_type") }</th>
+							<th>{ i18n.T(ctx, "tasks.col_period") }</th>
 							<th>{ i18n.T(ctx, "tasks.col_hours") }</th>
 							<th class="has-text-right"></th>
 						</tr>
@@ -74,7 +86,7 @@ templ Tasks(clients []models.Client, types []models.TaskType, byClient map[int64
 					<tbody>
 						for _, day := range days {
 							<tr class="day-header">
-								<td colspan="3"><strong>{ day.Date }</strong></td>
+								<td colspan="4"><strong>{ day.Date }</strong></td>
 								<td><strong>{ formatHours(day.Hours) }</strong></td>
 								<td></td>
 							</tr>
@@ -83,6 +95,7 @@ templ Tasks(clients []models.Client, types []models.TaskType, byClient map[int64
 									<td>{ t.Title }</td>
 									<td>{ clientName(clients, t.ClientID) }</td>
 									<td>{ taskTypeName(types, t.TaskTypeID) }</td>
+									<td>{ periodName(periods, t.PeriodID) }</td>
 									<td>{ formatHours(t.HoursSpent) }</td>
 									<td class="has-text-right">
 										<a class="button is-small" href={ templ.URL("/tasks/" + itoa(t.ID) + "/edit") }>
@@ -107,7 +120,7 @@ templ Tasks(clients []models.Client, types []models.TaskType, byClient map[int64
 	}
 }
 
-templ EditTask(task models.Task, clients []models.Client, types []models.TaskType) {
+templ EditTask(task models.Task, clients []models.Client, types []models.TaskType, periods []models.Period) {
 	@Layout(i18n.T(ctx, "tasks.edit_title")) {
 		<section class="section">
 			<div class="container">
@@ -144,6 +157,20 @@ templ EditTask(task models.Task, clients []models.Client, types []models.TaskTyp
 							</div>
 						</div>
 					</div>
+					if len(periods) > 0 {
+						<div class="field">
+							<label class="label">{ i18n.T(ctx, "tasks.label_period") }</label>
+							<div class="control">
+								<div class="select">
+									<select name="period_id">
+										for _, p := range periods {
+											<option value={ itoa(p.ID) } selected?={ p.ID == task.PeriodID }>{ p.Name }</option>
+										}
+									</select>
+								</div>
+							</div>
+						</div>
+					}
 					<div class="field">
 						<label class="label">{ i18n.T(ctx, "tasks.label_hours") }</label>
 						<div class="control">

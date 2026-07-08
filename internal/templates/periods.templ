@@ -1,0 +1,67 @@
+package templates
+
+import (
+	"github.com/bloomyindev/time-tracker/internal/models"
+	"github.com/invopop/ctxi18n/i18n"
+)
+
+templ Periods(periods []models.Period) {
+	@Layout(i18n.T(ctx, "periods.title")) {
+		<section class="section">
+			<div class="container">
+				<h1 class="title">{ i18n.T(ctx, "periods.title") }</h1>
+
+				<form method="post" action="/periods" class="box">
+					<div class="field has-addons">
+						<div class="control is-expanded">
+							<input class="input" type="text" name="name" placeholder={ i18n.T(ctx, "periods.name_placeholder") } required/>
+						</div>
+						<div class="control">
+							<button class="button is-primary" type="submit">
+								<i data-lucide="plus"></i>
+								{ i18n.T(ctx, "periods.add") }
+							</button>
+						</div>
+					</div>
+				</form>
+
+				<table class="table is-fullwidth is-hoverable">
+					<thead>
+						<tr>
+							<th>{ i18n.T(ctx, "periods.name") }</th>
+							<th class="has-text-right"></th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, p := range periods {
+							<tr>
+								<td>
+									{ p.Name }
+									if p.IsDefault {
+										<span class="tag is-primary is-light ml-2">{ i18n.T(ctx, "periods.default") }</span>
+									}
+								</td>
+								<td class="has-text-right">
+									if !p.IsDefault {
+										<form method="post" action={ templ.URL("/periods/" + itoa(p.ID) + "/default") }>
+											<button class="button is-small" type="submit">
+												<i data-lucide="star"></i>
+												{ i18n.T(ctx, "periods.set_default") }
+											</button>
+										</form>
+									}
+									<form method="post" action={ templ.URL("/periods/" + itoa(p.ID) + "/delete") }>
+										<button class="button is-small is-danger" type="submit">
+											<i data-lucide="trash-2"></i>
+											{ i18n.T(ctx, "periods.delete") }
+										</button>
+									</form>
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		</section>
+	}
+}

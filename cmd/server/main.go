@@ -51,6 +51,11 @@ func main() {
 	mux.Handle("POST /task-types", authSvc.RequireAuth(handlers.CreateTaskType(conn)))
 	mux.Handle("POST /task-types/{id}/delete", authSvc.RequireAuth(handlers.DeleteTaskType(conn)))
 
+	mux.Handle("GET /periods", authSvc.RequireAuth(handlers.ListPeriods(conn)))
+	mux.Handle("POST /periods", authSvc.RequireAuth(handlers.CreatePeriod(conn)))
+	mux.Handle("POST /periods/{id}/default", authSvc.RequireAuth(handlers.SetDefaultPeriod(conn)))
+	mux.Handle("POST /periods/{id}/delete", authSvc.RequireAuth(handlers.DeletePeriod(conn)))
+
 	mux.Handle("GET /tasks", authSvc.RequireAuth(handlers.ListTasks(conn)))
 	mux.Handle("POST /tasks", authSvc.RequireAuth(handlers.CreateTask(conn)))
 	mux.Handle("GET /tasks/{id}/edit", authSvc.RequireAuth(handlers.EditTaskForm(conn)))

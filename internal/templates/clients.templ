@@ -62,17 +62,36 @@ templ Clients(clients []models.Client) {
 	}
 }
 
-templ ClientDetail(client models.Client, taskTypes []TaskTypeChoice, tasks []models.Task, totalHours float64) {
+templ ClientDetail(client models.Client, taskTypes []TaskTypeChoice, tasks []models.Task, totalHours float64, periods []models.Period, selectedPeriodID int64) {
 	@Layout(client.Name) {
 		<section class="section">
 			<div class="container">
 				<h1 class="title">{ client.Name }</h1>
 				<h2 class="subtitle">{ i18n.T(ctx, "clients.hours_logged", i18n.M{"hours": formatHours(totalHours)}) }</h2>
 
+				if len(periods) > 0 {
+					<form method="get" class="box">
+						<div class="field">
+							<label class="label">{ i18n.T(ctx, "clients.filter_by_period") }</label>
+							<div class="control">
+								<div class="select">
+									<select name="period_id" onchange="this.form.submit()">
+										<option value="" selected?={ selectedPeriodID == 0 }>{ i18n.T(ctx, "clients.all_periods") }</option>
+										for _, p := range periods {
+											<option value={ itoa(p.ID) } selected?={ p.ID == selectedPeriodID }>{ p.Name }</option>
+										}
+									</select>
+								</div>
+							</div>
+						</div>
+					</form>
+				}
+
 				<table class="table is-fullwidth is-hoverable">
 					<thead>
 						<tr>
 							<th>{ i18n.T(ctx, "clients.col_title") }</th>
+							<th>{ i18n.T(ctx, "clients.col_period") }</th>
 							<th>{ i18n.T(ctx, "clients.col_hours") }</th>
 							<th>{ i18n.T(ctx, "clients.col_date") }</th>
 						</tr>
@@ -81,6 +100,7 @@ templ ClientDetail(client models.Client, taskTypes []TaskTypeChoice, tasks []mod
 						for _, t := range tasks {
 							<tr>
 								<td>{ t.Title }</td>
+								<td>{ periodName(periods, t.PeriodID) }</td>
 								<td>{ formatHours(t.HoursSpent) }</td>
 								<td>{ t.Date.Format("02/01/2006") }</td>
 							</tr>

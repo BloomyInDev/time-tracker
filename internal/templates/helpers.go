@@ -28,6 +28,15 @@ func taskTypeName(types []models.TaskType, id int64) string {
 	return ""
 }
 
+func periodName(periods []models.Period, id int64) string {
+	for _, p := range periods {
+		if p.ID == id {
+			return p.Name
+		}
+	}
+	return ""
+}
+
 func formatHours(h float64) string {
 	return strconv.FormatFloat(h, 'f', 2, 64)
 }

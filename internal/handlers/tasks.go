@@ -31,14 +31,34 @@ func ListTasks(conn *sql.DB) http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		periods, err := db.ListPeriods(conn, userID)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 		byClient, err := db.ListTaskTypesByClient(conn, userID)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		templates.Tasks(clients, types, byClient, groupByDay(tasks), time.Now().Format("2006-01-02")).Render(r.Context(), w)
+		var defaultPeriodID int64
+		if p, err := db.GetDefaultPeriod(conn, userID); err == nil {
+			defaultPeriodID = p.ID
+		}
+
+		templates.Tasks(clients, types, periods, byClient, groupByDay(tasks), time.Now().Format("2006-01-02"), defaultPeriodID).Render(r.Context(), w)
 	}
+}
+
+// parsePeriodID reads an optional period_id form value; a blank or
+// missing value means "no period" rather than a validation error.
+func parsePeriodID(r *http.Request) (int64, error) {
+	raw := r.FormValue("period_id")
+	if raw == "" {
+		return 0, nil
+	}
+	return strconv.ParseInt(raw, 10, 64)
 }
 
 // groupByDay buckets tasks (already ordered by date desc) into per-day
@@ -105,6 +125,11 @@ func CreateTask(conn *sql.DB) http.HandlerFunc {
 			http.Error(w, "invalid date", http.StatusBadRequest)
 			return
 		}
+		periodID, err := parsePeriodID(r)
+		if err != nil {
+			http.Error(w, "invalid period_id", http.StatusBadRequest)
+			return
+		}
 
 		ok, err := taskTypeAllowedForClient(conn, clientID, taskTypeID)
 		if err != nil {
@@ -120,6 +145,7 @@ func CreateTask(conn *sql.DB) http.HandlerFunc {
 			UserID:     userID,
 			ClientID:   clientID,
 			TaskTypeID: taskTypeID,
+			PeriodID:   periodID,
 			Title:      r.FormValue("title"),
 			HoursSpent: hoursSpent,
 			Date:       date,
@@ -156,8 +182,13 @@ func EditTaskForm(conn *sql.DB) http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		periods, err := db.ListPeriods(conn, userID)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 
-		templates.EditTask(task, clients, types).Render(r.Context(), w)
+		templates.EditTask(task, clients, types, periods).Render(r.Context(), w)
 	}
 }
 
@@ -199,6 +230,11 @@ func UpdateTask(conn *sql.DB) http.HandlerFunc {
 			http.Error(w, "invalid date", http.StatusBadRequest)
 			return
 		}
+		periodID, err := parsePeriodID(r)
+		if err != nil {
+			http.Error(w, "invalid period_id", http.StatusBadRequest)
+			return
+		}
 
 		ok, err := taskTypeAllowedForClient(conn, clientID, taskTypeID)
 		if err != nil {
@@ -215,6 +251,7 @@ func UpdateTask(conn *sql.DB) http.HandlerFunc {
 			UserID:     userID,
 			ClientID:   clientID,
 			TaskTypeID: taskTypeID,
+			PeriodID:   periodID,
 			Title:      r.FormValue("title"),
 			HoursSpent: hoursSpent,
 			Date:       date,

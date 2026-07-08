@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/bloomyindev/time-tracker/internal/db"
+	"github.com/bloomyindev/time-tracker/internal/models"
 	"github.com/bloomyindev/time-tracker/internal/service/auth"
 	"github.com/bloomyindev/time-tracker/internal/templates"
 )
@@ -90,7 +91,27 @@ func ClientDetail(conn *sql.DB) http.HandlerFunc {
 			taskTypeChoices[i] = templates.TaskTypeChoice{TaskType: t, Assigned: assignedIDs[t.ID]}
 		}
 
-		tasks, err := db.ListTasksByClient(conn, userID, id)
+		periods, err := db.ListPeriods(conn, userID)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		var selectedPeriodID int64
+		if raw := r.URL.Query().Get("period_id"); raw != "" {
+			selectedPeriodID, err = strconv.ParseInt(raw, 10, 64)
+			if err != nil {
+				http.Error(w, "invalid period_id", http.StatusBadRequest)
+				return
+			}
+		}
+
+		var tasks []models.Task
+		if selectedPeriodID != 0 {
+			tasks, err = db.ListTasksByClientAndPeriod(conn, userID, id, selectedPeriodID)
+		} else {
+			tasks, err = db.ListTasksByClient(conn, userID, id)
+		}
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -100,7 +121,7 @@ func ClientDetail(conn *sql.DB) http.HandlerFunc {
 			totalHours += t.HoursSpent
 		}
 
-		templates.ClientDetail(client, taskTypeChoices, tasks, totalHours).Render(r.Context(), w)
+		templates.ClientDetail(client, taskTypeChoices, tasks, totalHours, periods, selectedPeriodID).Render(r.Context(), w)
 	}
 }
 
