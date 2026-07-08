@@ -45,11 +45,32 @@ templ Clients(clients []models.Client) {
 	}
 }
 
-templ ClientDetail(client models.Client, assigned []models.TaskType, available []models.TaskType) {
+templ ClientDetail(client models.Client, assigned []models.TaskType, available []models.TaskType, tasks []models.Task, totalHours float64) {
 	@Layout(client.Name) {
 		<section class="section">
 			<div class="container">
 				<h1 class="title">{ client.Name }</h1>
+				<h2 class="subtitle">{ formatHours(totalHours) } hours logged total</h2>
+
+				<table class="table is-fullwidth">
+					<thead>
+						<tr>
+							<th>Title</th>
+							<th>Hours</th>
+							<th>Date</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, t := range tasks {
+							<tr>
+								<td>{ t.Title }</td>
+								<td>{ formatHours(t.HoursSpent) }</td>
+								<td>{ t.Date.Format("2006-01-02") }</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+
 				<h2 class="subtitle">Task types allowed for this client</h2>
 
 				<table class="table is-fullwidth">

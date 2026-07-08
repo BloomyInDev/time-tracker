@@ -2,7 +2,12 @@ package templates
 
 import "github.com/bloomyindev/time-tracker/internal/models"
 
-templ Tasks(tasks []models.Task, clients []models.Client, types []models.TaskType, byClient map[int64][]int64) {
+type DailyTotal struct {
+	Date  string
+	Hours float64
+}
+
+templ Tasks(tasks []models.Task, clients []models.Client, types []models.TaskType, byClient map[int64][]int64, daily []DailyTotal) {
 	@Layout("Tasks") {
 		<section class="section">
 			<div class="container">
@@ -63,6 +68,24 @@ templ Tasks(tasks []models.Task, clients []models.Client, types []models.TaskTyp
 						</div>
 					</div>
 				</form>
+
+				<h2 class="subtitle">Hours per day</h2>
+				<table class="table is-fullwidth">
+					<thead>
+						<tr>
+							<th>Date</th>
+							<th>Total hours</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, d := range daily {
+							<tr>
+								<td>{ d.Date }</td>
+								<td>{ formatHours(d.Hours) }</td>
+							</tr>
+						}
+					</tbody>
+				</table>
 
 				<table class="table is-fullwidth">
 					<thead>

@@ -37,8 +37,23 @@ func ListTasks(conn *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		templates.Tasks(tasks, clients, types, byClient).Render(r.Context(), w)
+		templates.Tasks(tasks, clients, types, byClient, dailyTotals(tasks)).Render(r.Context(), w)
 	}
+}
+
+// dailyTotals groups tasks (already ordered by date desc) into per-day
+// hour sums for display above the task list.
+func dailyTotals(tasks []models.Task) []templates.DailyTotal {
+	var totals []templates.DailyTotal
+	for _, t := range tasks {
+		date := t.Date.Format("2006-01-02")
+		if len(totals) > 0 && totals[len(totals)-1].Date == date {
+			totals[len(totals)-1].Hours += t.HoursSpent
+			continue
+		}
+		totals = append(totals, templates.DailyTotal{Date: date, Hours: t.HoursSpent})
+	}
+	return totals
 }
 
 func CreateTask(conn *sql.DB) http.HandlerFunc {

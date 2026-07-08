@@ -94,7 +94,17 @@ func ClientDetail(conn *sql.DB) http.HandlerFunc {
 			}
 		}
 
-		templates.ClientDetail(client, assigned, available).Render(r.Context(), w)
+		tasks, err := db.ListTasksByClient(conn, userID, id)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		var totalHours float64
+		for _, t := range tasks {
+			totalHours += t.HoursSpent
+		}
+
+		templates.ClientDetail(client, assigned, available, tasks, totalHours).Render(r.Context(), w)
 	}
 }
 
