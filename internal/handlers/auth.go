@@ -7,6 +7,7 @@ import (
 
 	"github.com/bloomyindev/time-tracker/internal/service/auth"
 	"github.com/bloomyindev/time-tracker/internal/templates"
+	"github.com/invopop/ctxi18n/i18n"
 )
 
 func Login(w http.ResponseWriter, r *http.Request) {
@@ -22,11 +23,11 @@ func LoginSubmit(svc *auth.Service) http.HandlerFunc {
 
 		token, err := svc.Login(r.FormValue("email"), r.FormValue("password"))
 		if errors.Is(err, auth.ErrInvalidCredentials) {
-			templates.Login("Invalid credentials").Render(r.Context(), w)
+			templates.Login(i18n.T(r.Context(), "login.invalid_credentials")).Render(r.Context(), w)
 			return
 		}
 		if err != nil {
-			templates.Login("Something went wrong").Render(r.Context(), w)
+			templates.Login(i18n.T(r.Context(), "login.something_went_wrong")).Render(r.Context(), w)
 			return
 		}
 

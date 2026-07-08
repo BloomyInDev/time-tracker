@@ -1,6 +1,9 @@
 package templates
 
-import "github.com/bloomyindev/time-tracker/internal/models"
+import (
+	"github.com/bloomyindev/time-tracker/internal/models"
+	"github.com/invopop/ctxi18n/i18n"
+)
 
 type TaskTypeChoice struct {
 	TaskType models.TaskType
@@ -8,18 +11,18 @@ type TaskTypeChoice struct {
 }
 
 templ Clients(clients []models.Client) {
-	@Layout("Clients") {
+	@Layout(i18n.T(ctx, "clients.title")) {
 		<section class="section">
 			<div class="container">
-				<h1 class="title">Clients</h1>
+				<h1 class="title">{ i18n.T(ctx, "clients.title") }</h1>
 
 				<form method="post" action="/clients" class="box">
 					<div class="field has-addons">
 						<div class="control is-expanded">
-							<input class="input" type="text" name="name" placeholder="Client name" required/>
+							<input class="input" type="text" name="name" placeholder={ i18n.T(ctx, "clients.name_placeholder") } required/>
 						</div>
 						<div class="control">
-							<button class="button is-primary" type="submit">Add</button>
+							<button class="button is-primary" type="submit">{ i18n.T(ctx, "clients.add") }</button>
 						</div>
 					</div>
 				</form>
@@ -27,7 +30,7 @@ templ Clients(clients []models.Client) {
 				<table class="table is-fullwidth">
 					<thead>
 						<tr>
-							<th>Name</th>
+							<th>{ i18n.T(ctx, "clients.name") }</th>
 							<th class="has-text-right"></th>
 						</tr>
 					</thead>
@@ -36,9 +39,9 @@ templ Clients(clients []models.Client) {
 							<tr>
 								<td>{ c.Name }</td>
 								<td class="has-text-right">
-									<a class="button is-small" href={ templ.URL("/clients/" + itoa(c.ID)) }>Manage task types</a>
+									<a class="button is-small" href={ templ.URL("/clients/" + itoa(c.ID)) }>{ i18n.T(ctx, "clients.manage_task_types") }</a>
 									<form method="post" action={ templ.URL("/clients/" + itoa(c.ID) + "/delete") } style="display:inline">
-										<button class="button is-small is-danger" type="submit">Delete</button>
+										<button class="button is-small is-danger" type="submit">{ i18n.T(ctx, "clients.delete") }</button>
 									</form>
 								</td>
 							</tr>
@@ -55,14 +58,14 @@ templ ClientDetail(client models.Client, taskTypes []TaskTypeChoice, tasks []mod
 		<section class="section">
 			<div class="container">
 				<h1 class="title">{ client.Name }</h1>
-				<h2 class="subtitle">{ formatHours(totalHours) } hours logged total</h2>
+				<h2 class="subtitle">{ i18n.T(ctx, "clients.hours_logged", i18n.M{"hours": formatHours(totalHours)}) }</h2>
 
 				<table class="table is-fullwidth">
 					<thead>
 						<tr>
-							<th>Title</th>
-							<th>Hours</th>
-							<th>Date</th>
+							<th>{ i18n.T(ctx, "clients.col_title") }</th>
+							<th>{ i18n.T(ctx, "clients.col_hours") }</th>
+							<th>{ i18n.T(ctx, "clients.col_date") }</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -76,7 +79,7 @@ templ ClientDetail(client models.Client, taskTypes []TaskTypeChoice, tasks []mod
 					</tbody>
 				</table>
 
-				<h2 class="subtitle">Task types allowed for this client</h2>
+				<h2 class="subtitle">{ i18n.T(ctx, "clients.task_types_allowed") }</h2>
 
 				<form method="post" action={ templ.URL("/clients/" + itoa(client.ID) + "/task-types") } class="box">
 					for _, choice := range taskTypes {
@@ -89,7 +92,7 @@ templ ClientDetail(client models.Client, taskTypes []TaskTypeChoice, tasks []mod
 					}
 					<div class="field">
 						<div class="control">
-							<button class="button is-primary" type="submit">Save</button>
+							<button class="button is-primary" type="submit">{ i18n.T(ctx, "clients.save") }</button>
 						</div>
 					</div>
 				</form>

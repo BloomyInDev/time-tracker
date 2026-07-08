@@ -1,8 +1,13 @@
 package templates
 
+import (
+	"github.com/invopop/ctxi18n"
+	"github.com/invopop/ctxi18n/i18n"
+)
+
 templ Layout(title string) {
 	<!DOCTYPE html>
-	<html lang="en">
+	<html lang={ ctxi18n.Locale(ctx).Code().String() }>
 		<head>
 			<meta charset="utf-8"/>
 			<title>{ title }</title>
@@ -13,17 +18,19 @@ templ Layout(title string) {
 			<nav class="navbar" role="navigation" aria-label="main navigation">
 				<div class="navbar-brand">
 					<a class="navbar-item" href="/">
-						<strong>Time Tracker</strong>
+						<strong>{ i18n.T(ctx, "nav.brand") }</strong>
 					</a>
 				</div>
 				<div class="navbar-menu">
 					<div class="navbar-start">
-						<a class="navbar-item" href="/clients">Clients</a>
-						<a class="navbar-item" href="/task-types">Task Types</a>
-						<a class="navbar-item" href="/tasks">Tasks</a>
+						<a class="navbar-item" href="/clients">{ i18n.T(ctx, "nav.clients") }</a>
+						<a class="navbar-item" href="/task-types">{ i18n.T(ctx, "nav.task_types") }</a>
+						<a class="navbar-item" href="/tasks">{ i18n.T(ctx, "nav.tasks") }</a>
 					</div>
 					<div class="navbar-end">
-						<a class="navbar-item" href="/logout">Logout</a>
+						<a class="navbar-item" href="/lang/en">EN</a>
+						<a class="navbar-item" href="/lang/fr">FR</a>
+						<a class="navbar-item" href="/logout">{ i18n.T(ctx, "nav.logout") }</a>
 					</div>
 				</div>
 			</nav>

@@ -1,20 +1,23 @@
 package templates
 
-import "github.com/bloomyindev/time-tracker/internal/models"
+import (
+	"github.com/bloomyindev/time-tracker/internal/models"
+	"github.com/invopop/ctxi18n/i18n"
+)
 
 templ TaskTypes(types []models.TaskType) {
-	@Layout("Task Types") {
+	@Layout(i18n.T(ctx, "task_types.title")) {
 		<section class="section">
 			<div class="container">
-				<h1 class="title">Task Types</h1>
+				<h1 class="title">{ i18n.T(ctx, "task_types.title") }</h1>
 
 				<form method="post" action="/task-types" class="box">
 					<div class="field has-addons">
 						<div class="control is-expanded">
-							<input class="input" type="text" name="name" placeholder="Task type name" required/>
+							<input class="input" type="text" name="name" placeholder={ i18n.T(ctx, "task_types.name_placeholder") } required/>
 						</div>
 						<div class="control">
-							<button class="button is-primary" type="submit">Add</button>
+							<button class="button is-primary" type="submit">{ i18n.T(ctx, "task_types.add") }</button>
 						</div>
 					</div>
 				</form>
@@ -22,7 +25,7 @@ templ TaskTypes(types []models.TaskType) {
 				<table class="table is-fullwidth">
 					<thead>
 						<tr>
-							<th>Name</th>
+							<th>{ i18n.T(ctx, "task_types.name") }</th>
 							<th class="has-text-right"></th>
 						</tr>
 					</thead>
@@ -32,7 +35,7 @@ templ TaskTypes(types []models.TaskType) {
 								<td>{ t.Name }</td>
 								<td class="has-text-right">
 									<form method="post" action={ templ.URL("/task-types/" + itoa(t.ID) + "/delete") }>
-										<button class="button is-small is-danger" type="submit">Delete</button>
+										<button class="button is-small is-danger" type="submit">{ i18n.T(ctx, "task_types.delete") }</button>
 									</form>
 								</td>
 							</tr>

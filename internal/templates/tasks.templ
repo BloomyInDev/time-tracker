@@ -1,6 +1,9 @@
 package templates
 
-import "github.com/bloomyindev/time-tracker/internal/models"
+import (
+	"github.com/bloomyindev/time-tracker/internal/models"
+	"github.com/invopop/ctxi18n/i18n"
+)
 
 type DayGroup struct {
 	Date  string
@@ -9,10 +12,10 @@ type DayGroup struct {
 }
 
 templ Tasks(clients []models.Client, types []models.TaskType, byClient map[int64][]int64, days []DayGroup, today string) {
-	@Layout("Tasks") {
+	@Layout(i18n.T(ctx, "tasks.title")) {
 		<section class="section">
 			<div class="container">
-				<h1 class="title">Tasks</h1>
+				<h1 class="title">{ i18n.T(ctx, "tasks.title") }</h1>
 
 				<form
 					method="post"
@@ -23,7 +26,7 @@ templ Tasks(clients []models.Client, types []models.TaskType, byClient map[int64
 				>
 					<div class="field is-grouped">
 						<div class="control is-expanded">
-							<input class="input" type="text" name="title" placeholder="Title" required/>
+							<input class="input" type="text" name="title" placeholder={ i18n.T(ctx, "tasks.title_placeholder") } required/>
 						</div>
 						<div class="control">
 							<div class="select">
@@ -44,13 +47,13 @@ templ Tasks(clients []models.Client, types []models.TaskType, byClient map[int64
 							</div>
 						</div>
 						<div class="control">
-							<input class="input" type="number" step="0.25" name="hours_spent" placeholder="Hours" style="width: 6em" required/>
+							<input class="input" type="number" step="0.25" name="hours_spent" placeholder={ i18n.T(ctx, "tasks.hours_placeholder") } style="width: 6em" required/>
 						</div>
 						<div class="control">
 							<input class="input" type="date" name="date" value={ today }/>
 						</div>
 						<div class="control">
-							<button class="button is-primary" type="submit">Add</button>
+							<button class="button is-primary" type="submit">{ i18n.T(ctx, "tasks.add") }</button>
 						</div>
 					</div>
 				</form>
@@ -58,8 +61,8 @@ templ Tasks(clients []models.Client, types []models.TaskType, byClient map[int64
 				<table class="table is-fullwidth">
 					<thead>
 						<tr>
-							<th>Title</th>
-							<th>Hours</th>
+							<th>{ i18n.T(ctx, "tasks.col_title") }</th>
+							<th>{ i18n.T(ctx, "tasks.col_hours") }</th>
 							<th class="has-text-right"></th>
 						</tr>
 					</thead>
@@ -75,9 +78,9 @@ templ Tasks(clients []models.Client, types []models.TaskType, byClient map[int64
 									<td>{ t.Title }</td>
 									<td>{ formatHours(t.HoursSpent) }</td>
 									<td class="has-text-right">
-										<a class="button is-small" href={ templ.URL("/tasks/" + itoa(t.ID) + "/edit") }>Edit</a>
+										<a class="button is-small" href={ templ.URL("/tasks/" + itoa(t.ID) + "/edit") }>{ i18n.T(ctx, "tasks.edit") }</a>
 										<form method="post" action={ templ.URL("/tasks/" + itoa(t.ID) + "/delete") } style="display:inline">
-											<button class="button is-small is-danger" type="submit">Delete</button>
+											<button class="button is-small is-danger" type="submit">{ i18n.T(ctx, "tasks.delete") }</button>
 										</form>
 									</td>
 								</tr>
@@ -92,20 +95,20 @@ templ Tasks(clients []models.Client, types []models.TaskType, byClient map[int64
 }
 
 templ EditTask(task models.Task, clients []models.Client, types []models.TaskType) {
-	@Layout("Edit Task") {
+	@Layout(i18n.T(ctx, "tasks.edit_title")) {
 		<section class="section">
 			<div class="container">
-				<h1 class="title">Edit Task</h1>
+				<h1 class="title">{ i18n.T(ctx, "tasks.edit_title") }</h1>
 
 				<form method="post" action={ templ.URL("/tasks/" + itoa(task.ID) + "/update") } class="box">
 					<div class="field">
-						<label class="label">Title</label>
+						<label class="label">{ i18n.T(ctx, "tasks.label_title") }</label>
 						<div class="control">
 							<input class="input" type="text" name="title" value={ task.Title } required/>
 						</div>
 					</div>
 					<div class="field">
-						<label class="label">Client</label>
+						<label class="label">{ i18n.T(ctx, "tasks.label_client") }</label>
 						<div class="control">
 							<div class="select">
 								<select name="client_id">
@@ -117,7 +120,7 @@ templ EditTask(task models.Task, clients []models.Client, types []models.TaskTyp
 						</div>
 					</div>
 					<div class="field">
-						<label class="label">Task Type</label>
+						<label class="label">{ i18n.T(ctx, "tasks.label_task_type") }</label>
 						<div class="control">
 							<div class="select">
 								<select name="task_type_id">
@@ -129,20 +132,20 @@ templ EditTask(task models.Task, clients []models.Client, types []models.TaskTyp
 						</div>
 					</div>
 					<div class="field">
-						<label class="label">Hours spent</label>
+						<label class="label">{ i18n.T(ctx, "tasks.label_hours") }</label>
 						<div class="control">
 							<input class="input" type="number" step="0.25" name="hours_spent" value={ formatHours(task.HoursSpent) } required/>
 						</div>
 					</div>
 					<div class="field">
-						<label class="label">Date</label>
+						<label class="label">{ i18n.T(ctx, "tasks.label_date") }</label>
 						<div class="control">
 							<input class="input" type="date" name="date" value={ task.Date.Format("2006-01-02") } required/>
 						</div>
 					</div>
 					<div class="field">
 						<div class="control">
-							<button class="button is-primary" type="submit">Save</button>
+							<button class="button is-primary" type="submit">{ i18n.T(ctx, "tasks.save") }</button>
 						</div>
 					</div>
 				</form>
