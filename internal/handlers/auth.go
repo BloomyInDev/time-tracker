@@ -6,6 +6,6 @@ import (
 	"github.com/bloomyindev/time-tracker/internal/templates"
 )
 
-func Home(w http.ResponseWriter, r *http.Request) {
-	templates.Home().Render(r.Context(), w)
+func Login(w http.ResponseWriter, r *http.Request) {
+	templates.Login().Render(r.Context(), w)
 }

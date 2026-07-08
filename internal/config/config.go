@@ -1,10 +1,10 @@
 package config
 
 type Config struct {
-	Addr   string
+	Port   int
 	DBPath string
 }
 
 func Load() Config {
-	return Config{}
+	return Config{Port: 8080}
 }
