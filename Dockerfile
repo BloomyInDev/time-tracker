@@ -18,7 +18,6 @@ RUN apk add --no-cache ca-certificates
 WORKDIR /app
 
 COPY --from=build /out/time-tracker /out/cli /app/
-COPY static ./static
 
 EXPOSE 8080
 ENV DB_PATH=/data/time-tracker.db

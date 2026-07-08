@@ -3,9 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/fs"
 	"log"
 	"net/http"
 
+	"github.com/bloomyindev/time-tracker/internal/assets"
 	"github.com/bloomyindev/time-tracker/internal/config"
 	"github.com/bloomyindev/time-tracker/internal/db"
 	"github.com/bloomyindev/time-tracker/internal/handlers"
@@ -65,7 +67,11 @@ func main() {
 	mux.Handle("GET /account", authSvc.RequireAuth(handlers.Account(conn)))
 	mux.Handle("POST /account/password", authSvc.RequireAuth(handlers.ChangePassword(conn, authSvc)))
 
-	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+	staticFS, err := fs.Sub(assets.Static, "static")
+	if err != nil {
+		log.Fatalf("mount static assets: %v", err)
+	}
+	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServerFS(staticFS)))
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", cfg.Port), i18n.Middleware(mux)))
 }
