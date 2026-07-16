@@ -46,6 +46,7 @@ func main() {
 	mux.Handle("GET /clients", authSvc.RequireAuth(handlers.ListClients(conn)))
 	mux.Handle("POST /clients", authSvc.RequireAuth(handlers.CreateClient(conn)))
 	mux.Handle("GET /clients/{id}", authSvc.RequireAuth(handlers.ClientDetail(conn)))
+	mux.Handle("GET /clients/{id}/report", authSvc.RequireAuth(handlers.ClientReport(conn)))
 	mux.Handle("POST /clients/{id}/delete", authSvc.RequireAuth(handlers.DeleteClient(conn)))
 	mux.Handle("POST /clients/{id}/task-types", authSvc.RequireAuth(handlers.SyncClientTaskTypes(conn)))
 

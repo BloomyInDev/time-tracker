@@ -34,6 +34,11 @@ fr:
     filter_by_task_type: "Filtrer par type de tâche"
     all_task_types: "Tous les types de tâche"
     save: "Enregistrer"
+    export_pdf: "Exporter en PDF"
+    report_title: "Rapport client"
+    total: "Total"
+    period: "Période"
+    task_type: "Type de tâche"
   task_types:
     title: "Types de tâches"
     name_placeholder: "Nom du type de tâche"

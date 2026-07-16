@@ -34,6 +34,11 @@ en:
     filter_by_task_type: "Filter by task type"
     all_task_types: "All task types"
     save: "Save"
+    export_pdf: "Export to PDF"
+    report_title: "Client report"
+    total: "Total"
+    period: "Period"
+    task_type: "Task type"
   task_types:
     title: "Task Types"
     name_placeholder: "Task type name"

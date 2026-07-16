@@ -2,8 +2,28 @@ package templates
 
 import (
 	"github.com/bloomyindev/time-tracker/internal/models"
+	"github.com/invopop/ctxi18n"
 	"github.com/invopop/ctxi18n/i18n"
 )
+
+// ClientTypeGroup is one task type's ("project") tasks and hour total for
+// the client report.
+type ClientTypeGroup struct {
+	Name  string
+	Tasks []models.Task
+	Hours float64
+}
+
+// ClientReportView is the print-friendly client report: the grand total on
+// top, then one table per task type.
+type ClientReportView struct {
+	ClientName   string
+	PeriodName   string
+	TaskTypeName string
+	Total        float64
+	Groups       []ClientTypeGroup
+	Periods      []models.Period
+}
 
 type TaskTypeChoice struct {
 	TaskType models.TaskType
@@ -62,12 +82,124 @@ templ Clients(clients []models.Client) {
 	}
 }
 
+// ClientReport is a standalone, print-friendly page (no navbar) that opens
+// the browser print dialog on load so the user can save it as a PDF.
+templ ClientReport(view ClientReportView) {
+	<!DOCTYPE html>
+	<html lang={ ctxi18n.Locale(ctx).Code().String() }>
+		<head>
+			<meta charset="utf-8"/>
+			<title>{ i18n.T(ctx, "clients.report_title") }</title>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<style>
+				body { font-family: system-ui, sans-serif; margin: 2.5rem; color: #111; font-size: 12px; }
+				h1 { margin: 0 0 .25rem; font-size: 1.3rem; }
+				h2 { margin: 1.25rem 0 .4rem; font-size: 1rem; }
+				.meta { color: #555; margin-bottom: 1rem; font-size: 11px; }
+				table { border-collapse: collapse; width: 100%; margin-bottom: .5rem; }
+				th, td { border: 1px solid #ccc; padding: .25rem .5rem; text-align: right; }
+				th:first-child, td:first-child { text-align: left; }
+				td.left, th.left { text-align: left; }
+				tfoot th { background: #f2f2f2; }
+				.grand { margin: 1rem 0 1.25rem; font-size: .95rem; font-weight: bold; }
+				.print-bar { margin-bottom: 1.5rem; }
+				@page { margin: 1.5cm; }
+				@media print { .print-bar { display: none; } body { margin: 0; font-size: 11px; } }
+			</style>
+		</head>
+		<body onload="window.print()">
+			<div class="print-bar">
+				<button type="button" onclick="window.print()">{ i18n.T(ctx, "clients.export_pdf") }</button>
+			</div>
+			<h1>{ view.ClientName }</h1>
+			if view.PeriodName != "" || view.TaskTypeName != "" {
+				<p class="meta">
+					if view.PeriodName != "" {
+						{ i18n.T(ctx, "clients.period") }: { view.PeriodName }
+					}
+					if view.PeriodName != "" && view.TaskTypeName != "" {
+						{ " — " }
+					}
+					if view.TaskTypeName != "" {
+						{ i18n.T(ctx, "clients.task_type") }: { view.TaskTypeName }
+					}
+				</p>
+			}
+			<table>
+				<thead>
+					<tr>
+						<th class="left">{ i18n.T(ctx, "clients.col_task_type") }</th>
+						<th>{ i18n.T(ctx, "clients.col_hours") }</th>
+					</tr>
+				</thead>
+				<tbody>
+					for _, g := range view.Groups {
+						<tr>
+							<td>{ g.Name }</td>
+							<td>{ formatHours(g.Hours) }</td>
+						</tr>
+					}
+				</tbody>
+				<tfoot>
+					<tr>
+						<th class="left">{ i18n.T(ctx, "clients.total") }</th>
+						<th>{ formatHours(view.Total) }</th>
+					</tr>
+				</tfoot>
+			</table>
+			for _, g := range view.Groups {
+				<h2>{ g.Name }</h2>
+				<table>
+					<thead>
+						<tr>
+							<th class="left">{ i18n.T(ctx, "clients.col_date") }</th>
+							<th class="left">{ i18n.T(ctx, "clients.col_title") }</th>
+							if view.PeriodName == "" {
+								<th class="left">{ i18n.T(ctx, "clients.col_period") }</th>
+							}
+							<th>{ i18n.T(ctx, "clients.col_hours") }</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, t := range g.Tasks {
+							<tr>
+								<td>{ t.Date.Format("02/01/2006") }</td>
+								<td>{ t.Title }</td>
+								if view.PeriodName == "" {
+									<td>{ periodName(view.Periods, t.PeriodID) }</td>
+								}
+								<td>{ formatHours(t.HoursSpent) }</td>
+							</tr>
+						}
+					</tbody>
+					<tfoot>
+						<tr>
+							if view.PeriodName == "" {
+								<th class="left" colspan="3">{ i18n.T(ctx, "clients.total") }</th>
+							} else {
+								<th class="left" colspan="2">{ i18n.T(ctx, "clients.total") }</th>
+							}
+							<th>{ formatHours(g.Hours) }</th>
+						</tr>
+					</tfoot>
+				</table>
+			}
+		</body>
+	</html>
+}
+
 templ ClientDetail(client models.Client, taskTypes []TaskTypeChoice, tasks []models.Task, totalHours float64, hoursByType map[int64]float64, allTypes []models.TaskType, periods []models.Period, selectedPeriodID int64, selectedTaskTypeID int64) {
 	@Layout(client.Name) {
 		<section class="section">
 			<div class="container">
 				<h1 class="title">{ client.Name }</h1>
 				<h2 class="subtitle">{ i18n.T(ctx, "clients.hours_logged", i18n.M{"hours": formatHours(totalHours)}) }</h2>
+
+				<div class="field mb-4">
+					<a class="button is-link" href={ templ.SafeURL("/clients/" + itoa(client.ID) + "/report?period_id=" + itoa(selectedPeriodID) + "&task_type_id=" + itoa(selectedTaskTypeID)) } target="_blank">
+						{ i18n.T(ctx, "clients.export_pdf") }
+					</a>
+				</div>
 
 				if len(periods) > 0 || len(allTypes) > 0 {
 					<form method="get" class="box">
