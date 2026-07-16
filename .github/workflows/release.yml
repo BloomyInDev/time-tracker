@@ -32,25 +32,27 @@ jobs:
           - { goos: openbsd, goarch: amd64 }
           - { goos: openbsd, goarch: arm64 }
           - { goos: netbsd, goarch: amd64 }
-    env:
-      CGO_ENABLED: 0
-      GOOS: ${{ matrix.goos }}
-      GOARCH: ${{ matrix.goarch }}
-      GOARM: ${{ matrix.goarm }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
           cache: true
 
+      # Runs natively: GOOS/GOARCH are scoped to the build step below so
+      # templ (a Go tool) is built and executed for the runner, not the target.
       - name: Generate templ code
         run: go tool templ generate
 
       - name: Build and package
+        env:
+          CGO_ENABLED: 0
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          GOARM: ${{ matrix.goarm }}
         run: |
           ext=""
           [ "$GOOS" = "windows" ] && ext=".exe"
@@ -62,7 +64,7 @@ jobs:
           tar -czf "dist/${name}.tar.gz" -C build "${name}"
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-${{ matrix.goos }}-${{ matrix.goarch }}
           path: dist/*.tar.gz
@@ -73,14 +75,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download build artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: release-*
           merge-multiple: true
           path: dist
 
       - name: Publish release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: dist/*.tar.gz
           generate_release_notes: true
