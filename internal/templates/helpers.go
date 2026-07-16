@@ -3,6 +3,7 @@ package templates
 import (
 	"context"
 	"strconv"
+	"time"
 
 	"github.com/bloomyindev/time-tracker/internal/models"
 	"github.com/invopop/ctxi18n/i18n"
@@ -17,6 +18,13 @@ func weekdayLabels(ctx context.Context) []string {
 		labels[i] = i18n.T(ctx, "account."+k)
 	}
 	return labels
+}
+
+// monthLabel returns the localized month name followed by the year, e.g.
+// "Juillet 2026". time.Month is 1-based (January = 1).
+func monthLabel(ctx context.Context, m time.Month, year int) string {
+	keys := []string{"january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"}
+	return i18n.T(ctx, "months."+keys[int(m)-1]) + " " + strconv.Itoa(year)
 }
 
 func itoa(id int64) string {
@@ -73,6 +81,19 @@ func diffClass(h float64) string {
 		return "has-text-danger"
 	default:
 		return "has-text-grey"
+	}
+}
+
+// printDiffClass colors a diff on the standalone print report using its own
+// CSS classes (the report doesn't load Bulma).
+func printDiffClass(h float64) string {
+	switch {
+	case h > 0:
+		return "pos"
+	case h < 0:
+		return "neg"
+	default:
+		return ""
 	}
 }
 

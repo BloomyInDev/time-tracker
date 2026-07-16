@@ -65,6 +65,7 @@ func main() {
 	mux.Handle("POST /tasks/{id}/delete", authSvc.RequireAuth(handlers.DeleteTask(conn)))
 
 	mux.Handle("GET /time", authSvc.RequireAuth(handlers.ListTimeEntries(conn)))
+	mux.Handle("GET /time/report", authSvc.RequireAuth(handlers.TimeReport(conn)))
 
 	mux.Handle("GET /account", authSvc.RequireAuth(handlers.Account(conn)))
 	mux.Handle("POST /account/hours", authSvc.RequireAuth(handlers.UpdateDailyHours(conn)))

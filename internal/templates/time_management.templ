@@ -3,6 +3,7 @@ package templates
 import (
 	"time"
 
+	"github.com/invopop/ctxi18n"
 	"github.com/invopop/ctxi18n/i18n"
 )
 
@@ -15,11 +16,85 @@ type DaySummary struct {
 	Diff   float64
 }
 
-templ TimeEntries(days []DaySummary) {
+// MonthSummary groups the days of one calendar month with that month's
+// running totals for the subtotal row.
+type MonthSummary struct {
+	Year   int
+	Month  time.Month
+	Days   []DaySummary
+	Hours  float64
+	Target float64
+	Diff   float64
+}
+
+// TimeView is the whole /time page: the month groups plus the active
+// date-to-date filter and its running totals across the range.
+type TimeView struct {
+	Months   []MonthSummary
+	From     string
+	To       string
+	Filtered bool
+	Hours    float64
+	Target   float64
+	Diff     float64
+}
+
+templ TimeEntries(view TimeView) {
 	@Layout(i18n.T(ctx, "time.title")) {
 		<section class="section">
 			<div class="container">
 				<h1 class="title">{ i18n.T(ctx, "time.title") }</h1>
+
+				<form method="get" action="/time" class="field is-grouped is-align-items-flex-end mb-4">
+					<div class="field mb-0 mr-2">
+						<label class="label">{ i18n.T(ctx, "time.from") }</label>
+						<div class="control">
+							<input class="input" type="date" name="from" value={ view.From }/>
+						</div>
+					</div>
+					<div class="field mb-0 mr-2">
+						<label class="label">{ i18n.T(ctx, "time.to") }</label>
+						<div class="control">
+							<input class="input" type="date" name="to" value={ view.To }/>
+						</div>
+					</div>
+					<div class="control">
+						<button class="button is-primary" type="submit">{ i18n.T(ctx, "time.filter") }</button>
+					</div>
+					if view.Filtered {
+						<div class="control">
+							<a class="button" href="/time">{ i18n.T(ctx, "time.reset") }</a>
+						</div>
+						<div class="control">
+							<a class="button is-link" href={ templ.SafeURL("/time/report?from=" + view.From + "&to=" + view.To) } target="_blank">{ i18n.T(ctx, "time.export_pdf") }</a>
+						</div>
+					}
+				</form>
+
+				if view.Filtered {
+					<div class="box">
+						<div class="level">
+							<div class="level-item has-text-centered">
+								<div>
+									<p class="heading">{ i18n.T(ctx, "time.col_hours") }</p>
+									<p class="title is-5">{ formatHours(view.Hours) }</p>
+								</div>
+							</div>
+							<div class="level-item has-text-centered">
+								<div>
+									<p class="heading">{ i18n.T(ctx, "time.col_target") }</p>
+									<p class="title is-5">{ formatHours(view.Target) }</p>
+								</div>
+							</div>
+							<div class="level-item has-text-centered">
+								<div>
+									<p class="heading">{ i18n.T(ctx, "time.overtime") }</p>
+									<p class={ "title is-5", diffClass(view.Diff) }>{ formatDiff(view.Diff) }</p>
+								</div>
+							</div>
+						</div>
+					</div>
+				}
 
 				<div class="field">
 					<label class="checkbox">
@@ -28,28 +103,126 @@ templ TimeEntries(days []DaySummary) {
 					</label>
 				</div>
 
-				<table class="table is-fullwidth is-hoverable">
-					<thead>
-						<tr>
-							<th>{ i18n.T(ctx, "time.col_date") }</th>
-							<th>{ i18n.T(ctx, "time.col_hours") }</th>
-							<th>{ i18n.T(ctx, "time.col_target") }</th>
-							<th>{ i18n.T(ctx, "time.col_diff") }</th>
-						</tr>
-					</thead>
-					<tbody>
-						for _, d := range days {
-							<tr class={ templ.KV("is-on-target", d.Diff == 0) }>
-								<td>{ d.Date.Format("02/01/2006") }</td>
-								<td>{ formatHours(d.Hours) }</td>
-								<td>{ formatHours(d.Target) }</td>
-								<td class={ diffClass(d.Diff) }>{ formatDiff(d.Diff) }</td>
+				for _, m := range view.Months {
+					<h2 class="subtitle is-4">{ monthLabel(ctx, m.Month, m.Year) }</h2>
+					<table class="table is-fullwidth is-hoverable">
+						<thead>
+							<tr>
+								<th>{ i18n.T(ctx, "time.col_date") }</th>
+								<th>{ i18n.T(ctx, "time.col_hours") }</th>
+								<th>{ i18n.T(ctx, "time.col_target") }</th>
+								<th>{ i18n.T(ctx, "time.col_diff") }</th>
 							</tr>
-						}
-					</tbody>
-				</table>
+						</thead>
+						<tbody>
+							for _, d := range m.Days {
+								<tr class={ templ.KV("is-on-target", d.Diff == 0) }>
+									<td>{ d.Date.Format("02/01/2006") }</td>
+									<td>{ formatHours(d.Hours) }</td>
+									<td>{ formatHours(d.Target) }</td>
+									<td class={ diffClass(d.Diff) }>{ formatDiff(d.Diff) }</td>
+								</tr>
+							}
+						</tbody>
+						<tfoot>
+							<tr>
+								<th>{ i18n.T(ctx, "time.total") }</th>
+								<th>{ formatHours(m.Hours) }</th>
+								<th>{ formatHours(m.Target) }</th>
+								<th class={ diffClass(m.Diff) }>{ formatDiff(m.Diff) }</th>
+							</tr>
+						</tfoot>
+					</table>
+				}
 				<script src="/static/js/time-filter.js"></script>
 			</div>
 		</section>
 	}
+}
+
+// rangeLabel formats the active from/to filter for the report header.
+func rangeLabel(from, to string) string {
+	switch {
+	case from != "" && to != "":
+		return from + " – " + to
+	case from != "":
+		return from + " –"
+	case to != "":
+		return "– " + to
+	default:
+		return ""
+	}
+}
+
+// TimeReport is a standalone, print-friendly page (no navbar) that opens the
+// browser print dialog on load so the user can save it as a PDF.
+templ TimeReport(view TimeView) {
+	<!DOCTYPE html>
+	<html lang={ ctxi18n.Locale(ctx).Code().String() }>
+		<head>
+			<meta charset="utf-8"/>
+			<title>{ i18n.T(ctx, "time.report_title") }</title>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<style>
+				body { font-family: system-ui, sans-serif; margin: 2.5rem; color: #111; font-size: 12px; }
+				h1 { margin: 0 0 .25rem; font-size: 1.3rem; }
+				h2 { margin: 1.25rem 0 .4rem; font-size: 1rem; }
+				.meta { color: #555; margin-bottom: 1rem; font-size: 11px; }
+				table { border-collapse: collapse; width: 100%; margin-bottom: .5rem; }
+				th, td { border: 1px solid #ccc; padding: .25rem .5rem; text-align: right; }
+				th:first-child, td:first-child { text-align: left; }
+				tfoot th { background: #f2f2f2; }
+				.grand { margin: 1rem 0 1.25rem; font-size: .95rem; font-weight: bold; }
+				.pos { color: #197a1b; }
+				.neg { color: #c1121f; }
+				.print-bar { margin-bottom: 1.5rem; }
+				@page { margin: 1.5cm; }
+				@media print { .print-bar { display: none; } body { margin: 0; font-size: 11px; } }
+			</style>
+		</head>
+		<body onload="window.print()">
+			<div class="print-bar">
+				<button type="button" onclick="window.print()">{ i18n.T(ctx, "time.export_pdf") }</button>
+			</div>
+			<h1>{ i18n.T(ctx, "time.report_title") }</h1>
+			if view.Filtered {
+				<p class="meta">{ i18n.T(ctx, "time.period") }: { rangeLabel(view.From, view.To) }</p>
+			}
+			<p class="grand">
+				{ i18n.T(ctx, "time.total") }: { formatHours(view.Hours) } / { formatHours(view.Target) }
+				&nbsp;—&nbsp;
+				{ i18n.T(ctx, "time.overtime") }: <span class={ printDiffClass(view.Diff) }>{ formatDiff(view.Diff) }</span>
+			</p>
+			<table>
+				<thead>
+					<tr>
+						<th>{ i18n.T(ctx, "time.col_date") }</th>
+						<th>{ i18n.T(ctx, "time.col_hours") }</th>
+						<th>{ i18n.T(ctx, "time.col_target") }</th>
+						<th>{ i18n.T(ctx, "time.col_diff") }</th>
+					</tr>
+				</thead>
+				<tbody>
+					for _, m := range view.Months {
+						for _, d := range m.Days {
+							<tr>
+								<td>{ d.Date.Format("02/01/2006") }</td>
+								<td>{ formatHours(d.Hours) }</td>
+								<td>{ formatHours(d.Target) }</td>
+								<td class={ printDiffClass(d.Diff) }>{ formatDiff(d.Diff) }</td>
+							</tr>
+						}
+					}
+				</tbody>
+				<tfoot>
+					<tr>
+						<th>{ i18n.T(ctx, "time.total") }</th>
+						<th>{ formatHours(view.Hours) }</th>
+						<th>{ formatHours(view.Target) }</th>
+						<th class={ printDiffClass(view.Diff) }>{ formatDiff(view.Diff) }</th>
+					</tr>
+				</tfoot>
+			</table>
+		</body>
+	</html>
 }
