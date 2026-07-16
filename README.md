@@ -56,6 +56,14 @@ the `/data` volume (`DB_PATH=/data/time-tracker.db`). Run admin commands inside
 the container with `docker exec <container> /app/time-tracker <command>` (see
 [CLI](#cli)).
 
+An example [`compose.yml`](compose.yml) is included:
+
+```sh
+docker compose up -d
+docker compose exec time-tracker /app/time-tracker register \
+  --email you@example.com --password secret
+```
+
 ### Prebuilt binary
 
 Download a tarball for your OS and architecture from the

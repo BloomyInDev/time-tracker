@@ -1,0 +1,16 @@
+services:
+  time-tracker:
+    image: ghcr.io/bloomyindev/time-tracker:latest
+    # Or build from this repo instead of pulling the published image:
+    # build: .
+    ports:
+      - "8080:8080"
+    environment:
+      # Set a strong secret in production.
+      JWT_SECRET: change-me
+    volumes:
+      - data:/data
+    restart: unless-stopped
+
+volumes:
+  data:
