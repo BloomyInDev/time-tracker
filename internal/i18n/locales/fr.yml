@@ -1,6 +1,7 @@
 fr:
   nav:
     brand: "Time Tracker"
+    time: "Temps"
     clients: "Clients"
     task_types: "Types de tâches"
     tasks: "Tâches"
@@ -47,6 +48,13 @@ fr:
     default: "Par défaut"
     set_default: "Définir par défaut"
     delete: "Supprimer"
+  time:
+    title: "Temps par jour"
+    col_date: "Date"
+    col_hours: "Heures"
+    col_target: "Objectif"
+    col_diff: "Différence"
+    show_all: "Afficher les jours à l'objectif"
   tasks:
     title: "Tâches"
     title_placeholder: "Titre"
@@ -76,3 +84,12 @@ fr:
     save: "Enregistrer"
     wrong_current_password: "Mot de passe actuel incorrect"
     password_changed: "Mot de passe mis à jour"
+    daily_hours: "Heures par jour"
+    hours_saved: "Heures par jour mises à jour"
+    monday: "Lundi"
+    tuesday: "Mardi"
+    wednesday: "Mercredi"
+    thursday: "Jeudi"
+    friday: "Vendredi"
+    saturday: "Samedi"
+    sunday: "Dimanche"

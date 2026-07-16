@@ -56,6 +56,13 @@ CREATE TABLE IF NOT EXISTS tasks (
 // migration are ignored.
 var migrations = []string{
 	`ALTER TABLE tasks ADD COLUMN period_id INTEGER REFERENCES periods(id)`,
+	`ALTER TABLE users ADD COLUMN hours_mon DOUBLE NOT NULL DEFAULT 0`,
+	`ALTER TABLE users ADD COLUMN hours_tue DOUBLE NOT NULL DEFAULT 0`,
+	`ALTER TABLE users ADD COLUMN hours_wed DOUBLE NOT NULL DEFAULT 0`,
+	`ALTER TABLE users ADD COLUMN hours_thu DOUBLE NOT NULL DEFAULT 0`,
+	`ALTER TABLE users ADD COLUMN hours_fri DOUBLE NOT NULL DEFAULT 0`,
+	`ALTER TABLE users ADD COLUMN hours_sat DOUBLE NOT NULL DEFAULT 0`,
+	`ALTER TABLE users ADD COLUMN hours_sun DOUBLE NOT NULL DEFAULT 0`,
 }
 
 func Open(path string) (*sql.DB, error) {

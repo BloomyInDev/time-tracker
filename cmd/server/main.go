@@ -64,7 +64,10 @@ func main() {
 	mux.Handle("POST /tasks/{id}/update", authSvc.RequireAuth(handlers.UpdateTask(conn)))
 	mux.Handle("POST /tasks/{id}/delete", authSvc.RequireAuth(handlers.DeleteTask(conn)))
 
+	mux.Handle("GET /time", authSvc.RequireAuth(handlers.ListTimeEntries(conn)))
+
 	mux.Handle("GET /account", authSvc.RequireAuth(handlers.Account(conn)))
+	mux.Handle("POST /account/hours", authSvc.RequireAuth(handlers.UpdateDailyHours(conn)))
 	mux.Handle("POST /account/password", authSvc.RequireAuth(handlers.ChangePassword(conn, authSvc)))
 
 	staticFS, err := fs.Sub(assets.Static, "static")

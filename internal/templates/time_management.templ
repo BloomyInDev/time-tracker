@@ -1,0 +1,55 @@
+package templates
+
+import (
+	"time"
+
+	"github.com/invopop/ctxi18n/i18n"
+)
+
+// DaySummary is the hours logged on a single day against that day's
+// target. Diff = Hours - Target (positive = overtime, negative = short).
+type DaySummary struct {
+	Date   time.Time
+	Hours  float64
+	Target float64
+	Diff   float64
+}
+
+templ TimeEntries(days []DaySummary) {
+	@Layout(i18n.T(ctx, "time.title")) {
+		<section class="section">
+			<div class="container">
+				<h1 class="title">{ i18n.T(ctx, "time.title") }</h1>
+
+				<div class="field">
+					<label class="checkbox">
+						<input type="checkbox" id="show-on-target"/>
+						{ i18n.T(ctx, "time.show_all") }
+					</label>
+				</div>
+
+				<table class="table is-fullwidth is-hoverable">
+					<thead>
+						<tr>
+							<th>{ i18n.T(ctx, "time.col_date") }</th>
+							<th>{ i18n.T(ctx, "time.col_hours") }</th>
+							<th>{ i18n.T(ctx, "time.col_target") }</th>
+							<th>{ i18n.T(ctx, "time.col_diff") }</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, d := range days {
+							<tr class={ templ.KV("is-on-target", d.Diff == 0) }>
+								<td>{ d.Date.Format("02/01/2006") }</td>
+								<td>{ formatHours(d.Hours) }</td>
+								<td>{ formatHours(d.Target) }</td>
+								<td class={ diffClass(d.Diff) }>{ formatDiff(d.Diff) }</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+				<script src="/static/js/time-filter.js"></script>
+			</div>
+		</section>
+	}
+}

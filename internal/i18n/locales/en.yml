@@ -1,6 +1,7 @@
 en:
   nav:
     brand: "Time Tracker"
+    time: "Time"
     clients: "Clients"
     task_types: "Task Types"
     tasks: "Tasks"
@@ -47,6 +48,13 @@ en:
     default: "Default"
     set_default: "Set default"
     delete: "Delete"
+  time:
+    title: "Time per day"
+    col_date: "Date"
+    col_hours: "Hours"
+    col_target: "Target"
+    col_diff: "Difference"
+    show_all: "Show days on target"
   tasks:
     title: "Tasks"
     title_placeholder: "Title"
@@ -76,3 +84,12 @@ en:
     save: "Save"
     wrong_current_password: "Current password is incorrect"
     password_changed: "Password updated"
+    daily_hours: "Hours per day"
+    hours_saved: "Hours per day updated"
+    monday: "Monday"
+    tuesday: "Tuesday"
+    wednesday: "Wednesday"
+    thursday: "Thursday"
+    friday: "Friday"
+    saturday: "Saturday"
+    sunday: "Sunday"

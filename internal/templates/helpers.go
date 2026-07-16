@@ -1,10 +1,23 @@
 package templates
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/bloomyindev/time-tracker/internal/models"
+	"github.com/invopop/ctxi18n/i18n"
 )
+
+// weekdayLabels returns the localized weekday names, index 0 = Monday ..
+// 6 = Sunday, matching models.User.DailyHours ordering.
+func weekdayLabels(ctx context.Context) []string {
+	keys := []string{"monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"}
+	labels := make([]string, len(keys))
+	for i, k := range keys {
+		labels[i] = i18n.T(ctx, "account."+k)
+	}
+	return labels
+}
 
 func itoa(id int64) string {
 	return strconv.FormatInt(id, 10)
@@ -39,6 +52,28 @@ func periodName(periods []models.Period, id int64) string {
 
 func formatHours(h float64) string {
 	return strconv.FormatFloat(h, 'f', 3, 64)
+}
+
+// formatDiff shows a signed hours delta, e.g. "+1.500" for overtime or
+// "-2.000" for missing hours.
+func formatDiff(h float64) string {
+	if h > 0 {
+		return "+" + formatHours(h)
+	}
+	return formatHours(h)
+}
+
+// diffClass colors a diff: green when overtime, red when short, muted at
+// exactly on target.
+func diffClass(h float64) string {
+	switch {
+	case h > 0:
+		return "has-text-success"
+	case h < 0:
+		return "has-text-danger"
+	default:
+		return "has-text-grey"
+	}
 }
 
 // serializeClientTaskTypes encodes a client_id -> task_type_ids map as
