@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -13,31 +12,17 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-func main() {
-	cmd := &cli.Command{
-		Name:  "cli",
-		Usage: "manage time-tracker data directly against the db",
-		Commands: []*cli.Command{
-			registerCommand(),
-			exportUsersCommand(),
-		},
-	}
-
-	if err := cmd.Run(context.Background(), os.Args); err != nil {
-		os.Exit(1)
-	}
-}
-
 func registerCommand() *cli.Command {
 	return &cli.Command{
 		Name:  "register",
 		Usage: "create a new user",
 		Flags: []cli.Flag{
+			dbPathFlag(),
 			&cli.StringFlag{Name: "email", Required: true},
 			&cli.StringFlag{Name: "password", Required: true},
 		},
 		Action: func(ctx context.Context, cmd *cli.Command) error {
-			conn, err := openDB()
+			conn, err := openDB(cmd)
 			if err != nil {
 				return err
 			}
@@ -58,8 +43,9 @@ func exportUsersCommand() *cli.Command {
 	return &cli.Command{
 		Name:  "export-users",
 		Usage: "export users as JSON (excludes password hashes)",
+		Flags: []cli.Flag{dbPathFlag()},
 		Action: func(ctx context.Context, cmd *cli.Command) error {
-			conn, err := openDB()
+			conn, err := openDB(cmd)
 			if err != nil {
 				return err
 			}
@@ -84,8 +70,4 @@ func exportUsersCommand() *cli.Command {
 			return enc.Encode(out)
 		},
 	}
-}
-
-func openDB() (*sql.DB, error) {
-	return db.Open(config.Load().DBPath)
 }

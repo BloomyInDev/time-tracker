@@ -53,8 +53,7 @@ jobs:
           [ "$GOOS" = "windows" ] && ext=".exe"
           name="time-tracker_${GOOS}_${GOARCH}"
           mkdir -p "dist/${name}"
-          go build -trimpath -ldflags "-s -w" -o "dist/${name}/time-tracker${ext}" ./cmd/server
-          go build -trimpath -ldflags "-s -w" -o "dist/${name}/cli${ext}" ./cmd/cli
+          go build -trimpath -ldflags "-s -w" -o "dist/${name}/time-tracker${ext}" ./cmd/time-tracker
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

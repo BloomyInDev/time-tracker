@@ -2,8 +2,9 @@ root = "."
 tmp_dir = "tmp"
 
 [build]
-  cmd = "go build -o ./tmp/time-tracker ./cmd/server"
+  cmd = "go build -o ./tmp/time-tracker ./cmd/time-tracker"
   entrypoint = "./tmp/time-tracker"
+  args_bin = ["serve"]
   include_ext = ["go"]
   exclude_dir = ["tmp", "bin"]
   delay = 100
