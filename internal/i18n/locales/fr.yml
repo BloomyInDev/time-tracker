@@ -55,7 +55,7 @@ fr:
     col_target: "Objectif"
     col_diff: "Différence"
     total: "Total"
-    show_all: "Afficher les jours à l'objectif"
+    show_all: "Inclure les jours à l’objectif (tableau + PDF)"
     from: "Du"
     to: "Au"
     filter: "Filtrer"

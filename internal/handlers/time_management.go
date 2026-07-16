@@ -106,6 +106,9 @@ func TimeReport(conn *sql.DB) http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		templates.TimeReport(view).Render(r.Context(), w)
+		// By default the report lists only days off target; all=1 keeps
+		// the days that hit their target exactly.
+		includeOnTarget := r.URL.Query().Get("all") == "1"
+		templates.TimeReport(view, includeOnTarget).Render(r.Context(), w)
 	}
 }

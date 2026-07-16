@@ -55,7 +55,7 @@ en:
     col_target: "Target"
     col_diff: "Difference"
     total: "Total"
-    show_all: "Show days on target"
+    show_all: "Include on-target days (table + PDF)"
     from: "From"
     to: "To"
     filter: "Filter"

@@ -66,10 +66,17 @@ templ TimeEntries(view TimeView) {
 							<a class="button" href="/time">{ i18n.T(ctx, "time.reset") }</a>
 						</div>
 						<div class="control">
-							<a class="button is-link" href={ templ.SafeURL("/time/report?from=" + view.From + "&to=" + view.To) } target="_blank">{ i18n.T(ctx, "time.export_pdf") }</a>
+							<a id="export-link" class="button is-link" href={ templ.SafeURL("/time/report?from=" + view.From + "&to=" + view.To) } target="_blank">{ i18n.T(ctx, "time.export_pdf") }</a>
 						</div>
 					}
 				</form>
+
+				<div class="field mb-4">
+					<label class="checkbox">
+						<input type="checkbox" id="show-on-target"/>
+						{ i18n.T(ctx, "time.show_all") }
+					</label>
+				</div>
 
 				if view.Filtered {
 					<div class="box">
@@ -95,13 +102,6 @@ templ TimeEntries(view TimeView) {
 						</div>
 					</div>
 				}
-
-				<div class="field">
-					<label class="checkbox">
-						<input type="checkbox" id="show-on-target"/>
-						{ i18n.T(ctx, "time.show_all") }
-					</label>
-				</div>
 
 				for _, m := range view.Months {
 					<h2 class="subtitle is-4">{ monthLabel(ctx, m.Month, m.Year) }</h2>
@@ -140,15 +140,25 @@ templ TimeEntries(view TimeView) {
 	}
 }
 
+// fmtISODate turns a "2006-01-02" bound into the "02/01/2006" display form
+// used across the app, leaving anything unparseable untouched.
+func fmtISODate(iso string) string {
+	t, err := time.Parse("2006-01-02", iso)
+	if err != nil {
+		return iso
+	}
+	return t.Format("02/01/2006")
+}
+
 // rangeLabel formats the active from/to filter for the report header.
 func rangeLabel(from, to string) string {
 	switch {
 	case from != "" && to != "":
-		return from + " – " + to
+		return fmtISODate(from) + " → " + fmtISODate(to)
 	case from != "":
-		return from + " –"
+		return fmtISODate(from) + " →"
 	case to != "":
-		return "– " + to
+		return "→ " + fmtISODate(to)
 	default:
 		return ""
 	}
@@ -156,7 +166,7 @@ func rangeLabel(from, to string) string {
 
 // TimeReport is a standalone, print-friendly page (no navbar) that opens the
 // browser print dialog on load so the user can save it as a PDF.
-templ TimeReport(view TimeView) {
+templ TimeReport(view TimeView, includeOnTarget bool) {
 	<!DOCTYPE html>
 	<html lang={ ctxi18n.Locale(ctx).Code().String() }>
 		<head>
@@ -205,12 +215,14 @@ templ TimeReport(view TimeView) {
 				<tbody>
 					for _, m := range view.Months {
 						for _, d := range m.Days {
-							<tr>
-								<td>{ d.Date.Format("02/01/2006") }</td>
-								<td>{ formatHours(d.Hours) }</td>
-								<td>{ formatHours(d.Target) }</td>
-								<td class={ printDiffClass(d.Diff) }>{ formatDiff(d.Diff) }</td>
-							</tr>
+							if includeOnTarget || d.Diff != 0 {
+								<tr>
+									<td>{ d.Date.Format("02/01/2006") }</td>
+									<td>{ formatHours(d.Hours) }</td>
+									<td>{ formatHours(d.Target) }</td>
+									<td class={ printDiffClass(d.Diff) }>{ formatDiff(d.Diff) }</td>
+								</tr>
+							}
 						}
 					}
 				</tbody>
