@@ -40,8 +40,9 @@ a user and log in.
 
 ### Docker (recommended)
 
-A multi-arch image (`linux/amd64`, `linux/arm64`) is published to GHCR on every
-push to `master` and on version tags.
+A multi-arch image is published to GHCR on every push to `master` and on
+version tags, for `linux/amd64`, `linux/arm64`, `linux/arm/v7`, `linux/arm/v6`,
+`linux/386`, `linux/ppc64le`, `linux/s390x` and `linux/riscv64`.
 
 ```sh
 docker run -d -p 8080:8080 \
@@ -58,9 +59,17 @@ the container with `docker exec <container> /app/time-tracker <command>` (see
 ### Prebuilt binary
 
 Download a tarball for your OS and architecture from the
-[Releases](https://github.com/bloomyindev/time-tracker/releases) page (Linux,
-macOS and Windows, on x86 and ARM). Each archive contains the single
-`time-tracker` binary.
+[Releases](https://github.com/bloomyindev/time-tracker/releases) page. Each
+archive contains the single `time-tracker` binary. Prebuilt targets:
+
+| OS      | Architectures                                     |
+|---------|---------------------------------------------------|
+| Linux   | amd64, 386, arm64, armv7, ppc64le, riscv64, s390x, loong64 |
+| macOS   | amd64, arm64                                       |
+| Windows | amd64, 386, arm64                                  |
+| FreeBSD | amd64, arm64                                       |
+| OpenBSD | amd64, arm64                                       |
+| NetBSD  | amd64                                              |
 
 ```sh
 tar -xzf time-tracker_*_linux_amd64.tar.gz
