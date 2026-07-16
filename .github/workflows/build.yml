@@ -1,0 +1,109 @@
+name: Build
+
+on:
+  push:
+    branches: [master]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  binaries:
+    # Tag pushes are handled by the release workflow, which attaches the
+    # same binaries to the GitHub Release.
+    if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { goos: linux, goarch: amd64 }
+          - { goos: linux, goarch: "386" }
+          - { goos: linux, goarch: arm64 }
+          - { goos: linux, goarch: arm, goarm: "7" }
+          - { goos: darwin, goarch: amd64 }
+          - { goos: darwin, goarch: arm64 }
+          - { goos: windows, goarch: amd64 }
+          - { goos: windows, goarch: arm64 }
+    env:
+      CGO_ENABLED: 0
+      GOOS: ${{ matrix.goos }}
+      GOARCH: ${{ matrix.goarch }}
+      GOARM: ${{ matrix.goarm }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Generate templ code
+        run: go tool templ generate
+
+      - name: Build
+        run: |
+          ext=""
+          [ "$GOOS" = "windows" ] && ext=".exe"
+          name="time-tracker_${GOOS}_${GOARCH}"
+          mkdir -p "dist/${name}"
+          go build -trimpath -ldflags "-s -w" -o "dist/${name}/time-tracker${ext}" ./cmd/server
+          go build -trimpath -ldflags "-s -w" -o "dist/${name}/cli${ext}" ./cmd/cli
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: time-tracker_${{ matrix.goos }}_${{ matrix.goarch }}
+          path: dist/time-tracker_${{ matrix.goos }}_${{ matrix.goarch }}
+          if-no-files-found: error
+
+  docker:
+    # No registry push for pull requests (no access to secrets anyway).
+    if: ${{ github.event_name != 'pull_request' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{version}}
+            type=sha
+
+      - name: Build and push
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

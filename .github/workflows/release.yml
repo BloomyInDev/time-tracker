@@ -1,0 +1,77 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { goos: linux, goarch: amd64 }
+          - { goos: linux, goarch: "386" }
+          - { goos: linux, goarch: arm64 }
+          - { goos: linux, goarch: arm, goarm: "7" }
+          - { goos: darwin, goarch: amd64 }
+          - { goos: darwin, goarch: arm64 }
+          - { goos: windows, goarch: amd64 }
+          - { goos: windows, goarch: arm64 }
+    env:
+      CGO_ENABLED: 0
+      GOOS: ${{ matrix.goos }}
+      GOARCH: ${{ matrix.goarch }}
+      GOARM: ${{ matrix.goarm }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Generate templ code
+        run: go tool templ generate
+
+      - name: Build and package
+        run: |
+          ext=""
+          [ "$GOOS" = "windows" ] && ext=".exe"
+          name="time-tracker_${GITHUB_REF_NAME}_${GOOS}_${GOARCH}"
+          mkdir -p "build/${name}"
+          go build -trimpath -ldflags "-s -w" -o "build/${name}/time-tracker${ext}" ./cmd/server
+          go build -trimpath -ldflags "-s -w" -o "build/${name}/cli${ext}" ./cmd/cli
+          cp README.md LICENSE "build/${name}/"
+          mkdir -p dist
+          tar -czf "dist/${name}.tar.gz" -C build "${name}"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: dist/*.tar.gz
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: release-*
+          merge-multiple: true
+          path: dist
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.tar.gz
+          generate_release_notes: true
