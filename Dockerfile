@@ -1,4 +1,6 @@
-FROM golang:1.26-alpine AS build
+# Build on the native platform and cross-compile to the target, so no QEMU
+# emulation is needed and any Go-supported linux/arch works.
+FROM --platform=$BUILDPLATFORM golang:1.26-alpine AS build
 
 WORKDIR /src
 
@@ -8,11 +10,13 @@ RUN go mod download
 COPY . .
 
 RUN go tool templ generate
-RUN CGO_ENABLED=0 go build -o /out/time-tracker ./cmd/time-tracker
 
-FROM alpine:3.20
+ARG TARGETOS TARGETARCH TARGETVARIANT
+RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH GOARM=${TARGETVARIANT#v} \
+	go build -trimpath -ldflags "-s -w" -o /out/time-tracker ./cmd/time-tracker
 
-RUN apk add --no-cache ca-certificates
+# Static binary (CGO disabled, assets embedded), so a scratch image is enough.
+FROM scratch
 
 WORKDIR /app
 
