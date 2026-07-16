@@ -39,6 +39,43 @@ func CreateClient(conn *sql.DB) http.HandlerFunc {
 	}
 }
 
+func EditClientForm(conn *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, _ := auth.UserIDFromContext(r.Context())
+		id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+		if err != nil {
+			http.Error(w, "invalid id", http.StatusBadRequest)
+			return
+		}
+		client, err := db.GetClient(conn, userID, id)
+		if err != nil {
+			http.Error(w, "client not found", http.StatusNotFound)
+			return
+		}
+		templates.EditClient(client).Render(r.Context(), w)
+	}
+}
+
+func RenameClient(conn *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, _ := auth.UserIDFromContext(r.Context())
+		id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+		if err != nil {
+			http.Error(w, "invalid id", http.StatusBadRequest)
+			return
+		}
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "bad request", http.StatusBadRequest)
+			return
+		}
+		if err := db.UpdateClient(conn, userID, id, r.FormValue("name")); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		http.Redirect(w, r, "/clients", http.StatusSeeOther)
+	}
+}
+
 func DeleteClient(conn *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, _ := auth.UserIDFromContext(r.Context())

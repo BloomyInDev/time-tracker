@@ -59,6 +59,18 @@ func SetDefaultPeriod(conn *sql.DB, userID, id int64) error {
 	return tx.Commit()
 }
 
+func GetPeriod(conn *sql.DB, userID, id int64) (models.Period, error) {
+	var p models.Period
+	err := conn.QueryRow(`SELECT id, user_id, name, is_default FROM periods WHERE id = ? AND user_id = ?`, id, userID).
+		Scan(&p.ID, &p.UserID, &p.Name, &p.IsDefault)
+	return p, err
+}
+
+func UpdatePeriod(conn *sql.DB, userID, id int64, name string) error {
+	_, err := conn.Exec(`UPDATE periods SET name = ? WHERE id = ? AND user_id = ?`, name, id, userID)
+	return err
+}
+
 func DeletePeriod(conn *sql.DB, userID, id int64) error {
 	_, err := conn.Exec(`DELETE FROM periods WHERE id = ? AND user_id = ?`, id, userID)
 	return err

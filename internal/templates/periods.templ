@@ -5,6 +5,36 @@ import (
 	"github.com/invopop/ctxi18n/i18n"
 )
 
+templ EditPeriod(period models.Period) {
+	@Layout(i18n.T(ctx, "periods.edit_title")) {
+		<section class="section">
+			<div class="container">
+				<h1 class="title">{ i18n.T(ctx, "periods.edit_title") }</h1>
+
+				<form method="post" action={ templ.URL("/periods/" + itoa(period.ID) + "/rename") } class="box">
+					<div class="field">
+						<label class="label">{ i18n.T(ctx, "periods.name") }</label>
+						<div class="control">
+							<input class="input" type="text" name="name" value={ period.Name } required/>
+						</div>
+					</div>
+					<div class="field is-grouped">
+						<div class="control">
+							<button class="button is-primary" type="submit">
+								<i data-lucide="save"></i>
+								{ i18n.T(ctx, "periods.save") }
+							</button>
+						</div>
+						<div class="control">
+							<a class="button" href="/periods">{ i18n.T(ctx, "periods.cancel") }</a>
+						</div>
+					</div>
+				</form>
+			</div>
+		</section>
+	}
+}
+
 templ Periods(periods []models.Period) {
 	@Layout(i18n.T(ctx, "periods.title")) {
 		<section class="section">
@@ -43,14 +73,18 @@ templ Periods(periods []models.Period) {
 								</td>
 								<td class="has-text-right">
 									if !p.IsDefault {
-										<form method="post" action={ templ.URL("/periods/" + itoa(p.ID) + "/default") }>
+										<form method="post" action={ templ.URL("/periods/" + itoa(p.ID) + "/default") } style="display:inline">
 											<button class="button is-small" type="submit">
 												<i data-lucide="star"></i>
 												{ i18n.T(ctx, "periods.set_default") }
 											</button>
 										</form>
 									}
-									<form method="post" action={ templ.URL("/periods/" + itoa(p.ID) + "/delete") }>
+									<a class="button is-small" href={ templ.URL("/periods/" + itoa(p.ID) + "/edit") }>
+										<i data-lucide="pencil"></i>
+										{ i18n.T(ctx, "periods.rename") }
+									</a>
+									<form method="post" action={ templ.URL("/periods/" + itoa(p.ID) + "/delete") } style="display:inline">
 										<button class="button is-small is-danger" type="submit">
 											<i data-lucide="trash-2"></i>
 											{ i18n.T(ctx, "periods.delete") }

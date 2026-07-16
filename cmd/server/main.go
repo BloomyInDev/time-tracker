@@ -47,16 +47,22 @@ func main() {
 	mux.Handle("POST /clients", authSvc.RequireAuth(handlers.CreateClient(conn)))
 	mux.Handle("GET /clients/{id}", authSvc.RequireAuth(handlers.ClientDetail(conn)))
 	mux.Handle("GET /clients/{id}/report", authSvc.RequireAuth(handlers.ClientReport(conn)))
+	mux.Handle("GET /clients/{id}/edit", authSvc.RequireAuth(handlers.EditClientForm(conn)))
+	mux.Handle("POST /clients/{id}/rename", authSvc.RequireAuth(handlers.RenameClient(conn)))
 	mux.Handle("POST /clients/{id}/delete", authSvc.RequireAuth(handlers.DeleteClient(conn)))
 	mux.Handle("POST /clients/{id}/task-types", authSvc.RequireAuth(handlers.SyncClientTaskTypes(conn)))
 
 	mux.Handle("GET /task-types", authSvc.RequireAuth(handlers.ListTaskTypes(conn)))
 	mux.Handle("POST /task-types", authSvc.RequireAuth(handlers.CreateTaskType(conn)))
+	mux.Handle("GET /task-types/{id}/edit", authSvc.RequireAuth(handlers.EditTaskTypeForm(conn)))
+	mux.Handle("POST /task-types/{id}/rename", authSvc.RequireAuth(handlers.RenameTaskType(conn)))
 	mux.Handle("POST /task-types/{id}/delete", authSvc.RequireAuth(handlers.DeleteTaskType(conn)))
 
 	mux.Handle("GET /periods", authSvc.RequireAuth(handlers.ListPeriods(conn)))
 	mux.Handle("POST /periods", authSvc.RequireAuth(handlers.CreatePeriod(conn)))
 	mux.Handle("POST /periods/{id}/default", authSvc.RequireAuth(handlers.SetDefaultPeriod(conn)))
+	mux.Handle("GET /periods/{id}/edit", authSvc.RequireAuth(handlers.EditPeriodForm(conn)))
+	mux.Handle("POST /periods/{id}/rename", authSvc.RequireAuth(handlers.RenamePeriod(conn)))
 	mux.Handle("POST /periods/{id}/delete", authSvc.RequireAuth(handlers.DeletePeriod(conn)))
 
 	mux.Handle("GET /tasks", authSvc.RequireAuth(handlers.ListTasks(conn)))

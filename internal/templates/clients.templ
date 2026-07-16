@@ -63,8 +63,12 @@ templ Clients(clients []models.Client) {
 								<td>{ c.Name }</td>
 								<td class="has-text-right">
 									<a class="button is-small" href={ templ.URL("/clients/" + itoa(c.ID)) }>
-										<i data-lucide="tag"></i>
-										{ i18n.T(ctx, "clients.manage_task_types") }
+										<i data-lucide="eye"></i>
+										{ i18n.T(ctx, "clients.details") }
+									</a>
+									<a class="button is-small" href={ templ.URL("/clients/" + itoa(c.ID) + "/edit") }>
+										<i data-lucide="pencil"></i>
+										{ i18n.T(ctx, "clients.rename") }
 									</a>
 									<form method="post" action={ templ.URL("/clients/" + itoa(c.ID) + "/delete") } style="display:inline">
 										<button class="button is-small is-danger" type="submit">
@@ -77,6 +81,36 @@ templ Clients(clients []models.Client) {
 						}
 					</tbody>
 				</table>
+			</div>
+		</section>
+	}
+}
+
+templ EditClient(client models.Client) {
+	@Layout(i18n.T(ctx, "clients.edit_title")) {
+		<section class="section">
+			<div class="container">
+				<h1 class="title">{ i18n.T(ctx, "clients.edit_title") }</h1>
+
+				<form method="post" action={ templ.URL("/clients/" + itoa(client.ID) + "/rename") } class="box">
+					<div class="field">
+						<label class="label">{ i18n.T(ctx, "clients.name") }</label>
+						<div class="control">
+							<input class="input" type="text" name="name" value={ client.Name } required/>
+						</div>
+					</div>
+					<div class="field is-grouped">
+						<div class="control">
+							<button class="button is-primary" type="submit">
+								<i data-lucide="save"></i>
+								{ i18n.T(ctx, "clients.save") }
+							</button>
+						</div>
+						<div class="control">
+							<a class="button" href="/clients">{ i18n.T(ctx, "clients.cancel") }</a>
+						</div>
+					</div>
+				</form>
 			</div>
 		</section>
 	}

@@ -5,6 +5,36 @@ import (
 	"github.com/invopop/ctxi18n/i18n"
 )
 
+templ EditTaskType(taskType models.TaskType) {
+	@Layout(i18n.T(ctx, "task_types.edit_title")) {
+		<section class="section">
+			<div class="container">
+				<h1 class="title">{ i18n.T(ctx, "task_types.edit_title") }</h1>
+
+				<form method="post" action={ templ.URL("/task-types/" + itoa(taskType.ID) + "/rename") } class="box">
+					<div class="field">
+						<label class="label">{ i18n.T(ctx, "task_types.name") }</label>
+						<div class="control">
+							<input class="input" type="text" name="name" value={ taskType.Name } required/>
+						</div>
+					</div>
+					<div class="field is-grouped">
+						<div class="control">
+							<button class="button is-primary" type="submit">
+								<i data-lucide="save"></i>
+								{ i18n.T(ctx, "task_types.save") }
+							</button>
+						</div>
+						<div class="control">
+							<a class="button" href="/task-types">{ i18n.T(ctx, "task_types.cancel") }</a>
+						</div>
+					</div>
+				</form>
+			</div>
+		</section>
+	}
+}
+
 templ TaskTypes(types []models.TaskType) {
 	@Layout(i18n.T(ctx, "task_types.title")) {
 		<section class="section">
@@ -37,7 +67,11 @@ templ TaskTypes(types []models.TaskType) {
 							<tr>
 								<td>{ t.Name }</td>
 								<td class="has-text-right">
-									<form method="post" action={ templ.URL("/task-types/" + itoa(t.ID) + "/delete") }>
+									<a class="button is-small" href={ templ.URL("/task-types/" + itoa(t.ID) + "/edit") }>
+										<i data-lucide="pencil"></i>
+										{ i18n.T(ctx, "task_types.rename") }
+									</a>
+									<form method="post" action={ templ.URL("/task-types/" + itoa(t.ID) + "/delete") } style="display:inline">
 										<button class="button is-small is-danger" type="submit">
 											<i data-lucide="trash-2"></i>
 											{ i18n.T(ctx, "task_types.delete") }
