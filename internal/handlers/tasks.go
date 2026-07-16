@@ -260,7 +260,9 @@ func UpdateTask(conn *sql.DB) http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		http.Redirect(w, r, "/tasks", http.StatusSeeOther)
+		// Anchor the reload on the edited row so the browser restores the
+		// scroll position instead of jumping to the top of the list.
+		http.Redirect(w, r, "/tasks#task-"+strconv.FormatInt(id, 10), http.StatusSeeOther)
 	}
 }
 

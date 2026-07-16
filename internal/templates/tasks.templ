@@ -91,7 +91,7 @@ templ Tasks(clients []models.Client, types []models.TaskType, periods []models.P
 								<td></td>
 							</tr>
 							for _, t := range day.Tasks {
-								<tr>
+								<tr id={ "task-" + itoa(t.ID) }>
 									<td>{ t.Title }</td>
 									<td>{ clientName(clients, t.ClientID) }</td>
 									<td>{ taskTypeName(types, t.TaskTypeID) }</td>
