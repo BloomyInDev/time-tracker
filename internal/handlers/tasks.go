@@ -21,7 +21,7 @@ func ListTasks(conn *sql.DB) http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		clients, err := db.ListClients(conn, userID)
+		clients, err := db.ListClientsOrderedByName(conn, userID)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

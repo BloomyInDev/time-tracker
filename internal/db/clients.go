@@ -36,6 +36,24 @@ func ListClients(conn *sql.DB, userID int64) ([]models.Client, error) {
 	return clients, rows.Err()
 }
 
+func ListClientsOrderedByName(conn *sql.DB, userID int64) ([]models.Client, error) {
+	rows, err := conn.Query(`SELECT id, user_id, name FROM clients WHERE user_id = ? ORDER BY name`, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var clients []models.Client
+	for rows.Next() {
+		var c models.Client
+		if err := rows.Scan(&c.ID, &c.UserID, &c.Name); err != nil {
+			return nil, err
+		}
+		clients = append(clients, c)
+	}
+	return clients, rows.Err()
+}
+
 func GetClient(conn *sql.DB, userID, id int64) (models.Client, error) {
 	var c models.Client
 	err := conn.QueryRow(`SELECT id, user_id, name FROM clients WHERE id = ? AND user_id = ?`, id, userID).
