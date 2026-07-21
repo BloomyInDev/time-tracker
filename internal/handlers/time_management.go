@@ -51,12 +51,21 @@ func buildTimeView(conn *sql.DB, userID int64, from, to string) (templates.TimeV
 		}
 	}
 
+	filtered := from != "" || to != ""
+
 	// An open-ended range (start given, no end) runs up to today.
 	if from != "" && to == "" {
 		to = time.Now().Format("2006-01-02")
 	}
 
-	view := templates.TimeView{From: from, To: to, Filtered: from != "" || to != ""}
+	// No range given at all: default to Jan 1 of this year through today.
+	if from == "" && to == "" {
+		now := time.Now()
+		from = time.Date(now.Year(), time.January, 1, 0, 0, 0, 0, now.Location()).Format("2006-01-02")
+		to = now.Format("2006-01-02")
+	}
+
+	view := templates.TimeView{From: from, To: to, Filtered: filtered}
 	for _, d := range days {
 		key := d.Date.Format("2006-01-02")
 		if from != "" && key < from {
