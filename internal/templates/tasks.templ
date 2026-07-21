@@ -6,9 +6,10 @@ import (
 )
 
 type DayGroup struct {
-	Date  string
-	Hours float64
-	Tasks []models.Task
+	Date   string
+	Hours  float64
+	Tasks  []models.Task
+	Future bool
 }
 
 templ Tasks(clients []models.Client, types []models.TaskType, periods []models.Period, byClient map[int64][]int64, days []DayGroup, today string, defaultPeriodID int64) {
@@ -72,6 +73,13 @@ templ Tasks(clients []models.Client, types []models.TaskType, periods []models.P
 					</div>
 				</form>
 
+				<div class="field mb-4">
+					<label class="checkbox">
+						<input type="checkbox" id="show-future-tasks"/>
+						{ i18n.T(ctx, "tasks.show_future") }
+					</label>
+				</div>
+
 				<table class="table is-fullwidth is-hoverable">
 					<thead>
 						<tr>
@@ -85,13 +93,13 @@ templ Tasks(clients []models.Client, types []models.TaskType, periods []models.P
 					</thead>
 					<tbody>
 						for _, day := range days {
-							<tr class="day-header">
+							<tr class={ "day-header", templ.KV("is-future", day.Future) }>
 								<td colspan="4"><strong>{ day.Date }</strong></td>
 								<td><strong>{ formatHours(day.Hours) }</strong></td>
 								<td></td>
 							</tr>
 							for _, t := range day.Tasks {
-								<tr id={ "task-" + itoa(t.ID) }>
+								<tr id={ "task-" + itoa(t.ID) } class={ templ.KV("is-future", day.Future) }>
 									<td>{ t.Title }</td>
 									<td>{ clientName(clients, t.ClientID) }</td>
 									<td>{ taskTypeName(types, t.TaskTypeID) }</td>
@@ -117,6 +125,7 @@ templ Tasks(clients []models.Client, types []models.TaskType, periods []models.P
 			</div>
 		</section>
 		<script src="/static/js/task-filter.js"></script>
+		<script src="/static/js/future-tasks-filter.js"></script>
 	}
 }
 

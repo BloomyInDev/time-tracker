@@ -98,6 +98,7 @@ fr:
     title_placeholder: "Titre"
     hours_placeholder: "Heures"
     add: "Ajouter"
+    show_future: "Afficher les prochains jours"
     col_title: "Titre"
     col_client: "Client"
     col_task_type: "Type de tâche"

@@ -65,6 +65,7 @@ func parsePeriodID(r *http.Request) (int64, error) {
 // groups with a running total, for a single table showing each day's
 // total followed by that day's tasks.
 func groupByDay(tasks []models.Task) []templates.DayGroup {
+	today := time.Now().Format("2006-01-02")
 	var groups []templates.DayGroup
 	for _, t := range tasks {
 		date := t.Date.Format("02/01/2006")
@@ -74,7 +75,12 @@ func groupByDay(tasks []models.Task) []templates.DayGroup {
 			last.Tasks = append(last.Tasks, t)
 			continue
 		}
-		groups = append(groups, templates.DayGroup{Date: date, Hours: t.HoursSpent, Tasks: []models.Task{t}})
+		groups = append(groups, templates.DayGroup{
+			Date:   date,
+			Hours:  t.HoursSpent,
+			Tasks:  []models.Task{t},
+			Future: t.Date.Format("2006-01-02") > today,
+		})
 	}
 	return groups
 }
