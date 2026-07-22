@@ -28,7 +28,7 @@ func ListTaskTypesForClient(conn *sql.DB, clientID int64) ([]models.TaskType, er
 		FROM task_types tt
 		JOIN task_types_for_client ttc ON ttc.task_type_id = tt.id
 		WHERE ttc.client_id = ?
-		ORDER BY tt.id`, clientID)
+		ORDER BY tt.name`, clientID)
 	if err != nil {
 		return nil, err
 	}

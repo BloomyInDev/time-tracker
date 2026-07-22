@@ -19,7 +19,7 @@ func CreateTaskType(conn *sql.DB, userID int64, name string) (models.TaskType, e
 }
 
 func ListTaskTypes(conn *sql.DB, userID int64) ([]models.TaskType, error) {
-	rows, err := conn.Query(`SELECT id, user_id, name FROM task_types WHERE user_id = ? ORDER BY id`, userID)
+	rows, err := conn.Query(`SELECT id, user_id, name FROM task_types WHERE user_id = ? ORDER BY name`, userID)
 	if err != nil {
 		return nil, err
 	}
