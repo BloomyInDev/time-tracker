@@ -1,6 +1,8 @@
 package templates
 
 import (
+	"strings"
+
 	"github.com/bloomyindev/time-tracker/internal/models"
 	"github.com/invopop/ctxi18n"
 	"github.com/invopop/ctxi18n/i18n"
@@ -50,6 +52,15 @@ templ Clients(clients []models.Client) {
 					</div>
 				</form>
 
+				<div class="field">
+					<div class="control has-icons-left">
+						<input id="client-search" class="input" type="search" placeholder={ i18n.T(ctx, "clients.search_placeholder") }/>
+						<span class="icon is-left">
+							<i data-lucide="search"></i>
+						</span>
+					</div>
+				</div>
+
 				<table class="table is-fullwidth is-hoverable">
 					<thead>
 						<tr>
@@ -57,9 +68,9 @@ templ Clients(clients []models.Client) {
 							<th class="has-text-right"></th>
 						</tr>
 					</thead>
-					<tbody>
+					<tbody id="client-rows">
 						for _, c := range clients {
-							<tr>
+							<tr data-name={ strings.ToLower(c.Name) }>
 								<td>{ c.Name }</td>
 								<td class="has-text-right">
 									<a class="button is-small" href={ templ.URL("/clients/" + itoa(c.ID)) }>
@@ -83,6 +94,7 @@ templ Clients(clients []models.Client) {
 				</table>
 			</div>
 		</section>
+		<script src="/static/js/client-filter.js"></script>
 	}
 }
 

@@ -42,6 +42,7 @@ fr:
     total: "Total"
     period: "Période"
     task_type: "Type de tâche"
+    search_placeholder: "Rechercher des clients..."
   task_types:
     title: "Types de tâches"
     name_placeholder: "Nom du type de tâche"

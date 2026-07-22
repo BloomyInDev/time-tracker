@@ -42,6 +42,7 @@ en:
     total: "Total"
     period: "Period"
     task_type: "Task type"
+    search_placeholder: "Search clients..."
   task_types:
     title: "Task Types"
     name_placeholder: "Task type name"
