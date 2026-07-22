@@ -14,7 +14,7 @@ import (
 func ListClients(conn *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, _ := auth.UserIDFromContext(r.Context())
-		clients, err := db.ListClients(conn, userID)
+		clients, err := db.ListClientsOrderedByName(conn, userID)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
