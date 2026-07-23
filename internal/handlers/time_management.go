@@ -30,12 +30,19 @@ func buildTimeView(conn *sql.DB, userID int64, from, to string) (templates.TimeV
 	}
 
 	// Tasks come back ordered by date desc, so we can fold consecutive
-	// same-day tasks into the current day without a map.
+	// same-day tasks into the current day without a map. workedPositive
+	// tracks, per day, whether any actual work (positive hours) was
+	// logged that day, as opposed to a day made up solely of adjustment
+	// entries (e.g. a recovery day off, or overtime paid out).
 	var days []templates.DaySummary
+	var workedPositive []bool
 	for _, t := range tasks {
 		key := t.Date.Format("2006-01-02")
 		if n := len(days); n > 0 && days[n-1].Date.Format("2006-01-02") == key {
 			days[n-1].Hours += t.HoursSpent
+			if t.HoursSpent > 0 {
+				workedPositive[n-1] = true
+			}
 			continue
 		}
 		days = append(days, templates.DaySummary{
@@ -43,10 +50,17 @@ func buildTimeView(conn *sql.DB, userID int64, from, to string) (templates.TimeV
 			Hours:  t.HoursSpent,
 			Target: user.DailyHours[weekdayIndex(t.Date)],
 		})
+		workedPositive = append(workedPositive, t.HoursSpent > 0)
 	}
 	for i := range days {
 		days[i].Diff = days[i].Hours - days[i].Target
-		if days[i].Diff < -(days[i].Target) {
+		// Floor the shortfall at -Target so a day with no real work
+		// (an untouched day, or a pure recovery-day-off entry) reads
+		// as "-Target" rather than an unbounded negative. Days with
+		// actual work logged alongside a negative adjustment (e.g.
+		// overtime paid out) are left unclamped so that adjustment's
+		// full value is reflected.
+		if !workedPositive[i] && days[i].Diff < -(days[i].Target) {
 			days[i].Diff = -(days[i].Target)
 		}
 	}
