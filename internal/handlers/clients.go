@@ -76,6 +76,29 @@ func RenameClient(conn *sql.DB) http.HandlerFunc {
 	}
 }
 
+// SetClientArchived toggles a client's archived flag. The desired state
+// comes from the "archived" form value so the same handler serves both
+// the archive and unarchive buttons.
+func SetClientArchived(conn *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, _ := auth.UserIDFromContext(r.Context())
+		id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+		if err != nil {
+			http.Error(w, "invalid id", http.StatusBadRequest)
+			return
+		}
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "bad request", http.StatusBadRequest)
+			return
+		}
+		if err := db.SetClientArchived(conn, userID, id, r.FormValue("archived") == "1"); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		http.Redirect(w, r, "/clients", http.StatusSeeOther)
+	}
+}
+
 func DeleteClient(conn *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, _ := auth.UserIDFromContext(r.Context())

@@ -63,6 +63,7 @@ var migrations = []string{
 	`ALTER TABLE users ADD COLUMN hours_fri DOUBLE NOT NULL DEFAULT 0`,
 	`ALTER TABLE users ADD COLUMN hours_sat DOUBLE NOT NULL DEFAULT 0`,
 	`ALTER TABLE users ADD COLUMN hours_sun DOUBLE NOT NULL DEFAULT 0`,
+	`ALTER TABLE clients ADD COLUMN is_archived INTEGER NOT NULL DEFAULT 0`,
 }
 
 func Open(path string) (*sql.DB, error) {

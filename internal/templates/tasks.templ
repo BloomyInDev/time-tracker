@@ -33,7 +33,9 @@ templ Tasks(clients []models.Client, types []models.TaskType, periods []models.P
 							<div class="select">
 								<select name="client_id" id="task-client-select">
 									for _, c := range clients {
-										<option value={ itoa(c.ID) }>{ c.Name }</option>
+										if !c.IsArchived {
+											<option value={ itoa(c.ID) }>{ c.Name }</option>
+										}
 									}
 								</select>
 							</div>
@@ -148,7 +150,9 @@ templ EditTask(task models.Task, clients []models.Client, types []models.TaskTyp
 							<div class="select">
 								<select name="client_id">
 									for _, c := range clients {
-										<option value={ itoa(c.ID) } selected?={ c.ID == task.ClientID }>{ c.Name }</option>
+										if !c.IsArchived || c.ID == task.ClientID {
+											<option value={ itoa(c.ID) } selected?={ c.ID == task.ClientID }>{ c.Name }</option>
+										}
 									}
 								</select>
 							</div>

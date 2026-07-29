@@ -85,6 +85,16 @@ func groupByDay(tasks []models.Task) []templates.DayGroup {
 	return groups
 }
 
+// clientAcceptsTasks rejects archived clients: they keep their history
+// but must not receive new tasks.
+func clientAcceptsTasks(conn *sql.DB, userID, clientID int64) (bool, error) {
+	client, err := db.GetClient(conn, userID, clientID)
+	if err != nil {
+		return false, err
+	}
+	return !client.IsArchived, nil
+}
+
 // taskTypeAllowedForClient enforces that a task type is one of the
 // client's configured task types, when the client has any configured.
 func taskTypeAllowedForClient(conn *sql.DB, clientID, taskTypeID int64) (bool, error) {
@@ -134,6 +144,16 @@ func CreateTask(conn *sql.DB) http.HandlerFunc {
 		periodID, err := parsePeriodID(r)
 		if err != nil {
 			http.Error(w, "invalid period_id", http.StatusBadRequest)
+			return
+		}
+
+		active, err := clientAcceptsTasks(conn, userID, clientID)
+		if err != nil {
+			http.Error(w, "client not found", http.StatusBadRequest)
+			return
+		}
+		if !active {
+			http.Error(w, "client is archived", http.StatusBadRequest)
 			return
 		}
 
@@ -206,7 +226,8 @@ func UpdateTask(conn *sql.DB) http.HandlerFunc {
 			http.Error(w, "invalid id", http.StatusBadRequest)
 			return
 		}
-		if _, err := db.GetTask(conn, userID, id); err != nil {
+		existing, err := db.GetTask(conn, userID, id)
+		if err != nil {
 			http.Error(w, "task not found", http.StatusNotFound)
 			return
 		}
@@ -240,6 +261,21 @@ func UpdateTask(conn *sql.DB) http.HandlerFunc {
 		if err != nil {
 			http.Error(w, "invalid period_id", http.StatusBadRequest)
 			return
+		}
+
+		// Moving a task onto an archived client is a new assignment, so
+		// it's refused; a task already on an archived client stays
+		// editable.
+		if clientID != existing.ClientID {
+			active, err := clientAcceptsTasks(conn, userID, clientID)
+			if err != nil {
+				http.Error(w, "client not found", http.StatusBadRequest)
+				return
+			}
+			if !active {
+				http.Error(w, "client is archived", http.StatusBadRequest)
+				return
+			}
 		}
 
 		ok, err := taskTypeAllowedForClient(conn, clientID, taskTypeID)

@@ -43,6 +43,9 @@ fr:
     period: "Période"
     task_type: "Type de tâche"
     search_placeholder: "Rechercher des clients..."
+    archived: "Archivé"
+    archive: "Archiver"
+    unarchive: "Désarchiver"
   task_types:
     title: "Types de tâches"
     name_placeholder: "Nom du type de tâche"

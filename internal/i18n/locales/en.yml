@@ -43,6 +43,9 @@ en:
     period: "Period"
     task_type: "Task type"
     search_placeholder: "Search clients..."
+    archived: "Archived"
+    archive: "Archive"
+    unarchive: "Unarchive"
   task_types:
     title: "Task Types"
     name_placeholder: "Task type name"

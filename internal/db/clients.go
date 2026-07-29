@@ -18,17 +18,15 @@ func CreateClient(conn *sql.DB, userID int64, name string) (models.Client, error
 	return models.Client{ID: id, UserID: userID, Name: name}, nil
 }
 
-func ListClients(conn *sql.DB, userID int64) ([]models.Client, error) {
-	rows, err := conn.Query(`SELECT id, user_id, name FROM clients WHERE user_id = ? ORDER BY id`, userID)
-	if err != nil {
-		return nil, err
-	}
+// scanClients collects the rows of a query selecting
+// id, user_id, name, is_archived from clients.
+func scanClients(rows *sql.Rows) ([]models.Client, error) {
 	defer rows.Close()
 
 	var clients []models.Client
 	for rows.Next() {
 		var c models.Client
-		if err := rows.Scan(&c.ID, &c.UserID, &c.Name); err != nil {
+		if err := rows.Scan(&c.ID, &c.UserID, &c.Name, &c.IsArchived); err != nil {
 			return nil, err
 		}
 		clients = append(clients, c)
@@ -36,33 +34,48 @@ func ListClients(conn *sql.DB, userID int64) ([]models.Client, error) {
 	return clients, rows.Err()
 }
 
-func ListClientsOrderedByName(conn *sql.DB, userID int64) ([]models.Client, error) {
-	rows, err := conn.Query(`SELECT id, user_id, name FROM clients WHERE user_id = ? ORDER BY name`, userID)
+func ListClients(conn *sql.DB, userID int64) ([]models.Client, error) {
+	rows, err := conn.Query(`SELECT id, user_id, name, is_archived FROM clients WHERE user_id = ? ORDER BY id`, userID)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	return scanClients(rows)
+}
 
-	var clients []models.Client
-	for rows.Next() {
-		var c models.Client
-		if err := rows.Scan(&c.ID, &c.UserID, &c.Name); err != nil {
-			return nil, err
-		}
-		clients = append(clients, c)
+func ListClientsOrderedByName(conn *sql.DB, userID int64) ([]models.Client, error) {
+	rows, err := conn.Query(`SELECT id, user_id, name, is_archived FROM clients WHERE user_id = ? ORDER BY name`, userID)
+	if err != nil {
+		return nil, err
 	}
-	return clients, rows.Err()
+	return scanClients(rows)
+}
+
+// ListActiveClientsOrderedByName returns only the clients that can still
+// receive new tasks, i.e. the non-archived ones.
+func ListActiveClientsOrderedByName(conn *sql.DB, userID int64) ([]models.Client, error) {
+	rows, err := conn.Query(`SELECT id, user_id, name, is_archived FROM clients WHERE user_id = ? AND is_archived = 0 ORDER BY name`, userID)
+	if err != nil {
+		return nil, err
+	}
+	return scanClients(rows)
 }
 
 func GetClient(conn *sql.DB, userID, id int64) (models.Client, error) {
 	var c models.Client
-	err := conn.QueryRow(`SELECT id, user_id, name FROM clients WHERE id = ? AND user_id = ?`, id, userID).
-		Scan(&c.ID, &c.UserID, &c.Name)
+	err := conn.QueryRow(`SELECT id, user_id, name, is_archived FROM clients WHERE id = ? AND user_id = ?`, id, userID).
+		Scan(&c.ID, &c.UserID, &c.Name, &c.IsArchived)
 	return c, err
 }
 
 func UpdateClient(conn *sql.DB, userID, id int64, name string) error {
 	_, err := conn.Exec(`UPDATE clients SET name = ? WHERE id = ? AND user_id = ?`, name, id, userID)
+	return err
+}
+
+// SetClientArchived archives or unarchives a client. An archived client
+// keeps its history but accepts no new tasks.
+func SetClientArchived(conn *sql.DB, userID, id int64, archived bool) error {
+	_, err := conn.Exec(`UPDATE clients SET is_archived = ? WHERE id = ? AND user_id = ?`, archived, id, userID)
 	return err
 }
 
