@@ -44,7 +44,6 @@ templ TimeEntries(view TimeView) {
 		<section class="section">
 			<div class="container">
 				<h1 class="title">{ i18n.T(ctx, "time.title") }</h1>
-
 				<form method="get" action="/time" class="field is-grouped is-align-items-flex-end mb-4">
 					<div class="field mb-0 mr-2">
 						<label class="label">{ i18n.T(ctx, "time.from") }</label>
@@ -70,14 +69,12 @@ templ TimeEntries(view TimeView) {
 						</div>
 					}
 				</form>
-
 				<div class="field mb-4">
 					<label class="checkbox">
 						<input type="checkbox" id="show-on-target"/>
 						{ i18n.T(ctx, "time.show_all") }
 					</label>
 				</div>
-
 				if view.Filtered {
 					<div class="box">
 						<div class="level">
@@ -102,7 +99,6 @@ templ TimeEntries(view TimeView) {
 						</div>
 					</div>
 				}
-
 				for _, m := range view.Months {
 					<h2 class="subtitle is-4">{ monthLabel(ctx, m.Month, m.Year) }</h2>
 					<table class="table is-fullwidth is-hoverable">

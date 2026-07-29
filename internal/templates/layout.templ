@@ -1,6 +1,7 @@
 package templates
 
 import (
+	"github.com/bryanvaz/go-templ-lucide-icons/icons"
 	"github.com/invopop/ctxi18n"
 	"github.com/invopop/ctxi18n/i18n"
 )
@@ -13,7 +14,6 @@ templ Layout(title string) {
 			<title>{ title }</title>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<link rel="stylesheet" href="/static/css/style.css"/>
-			<script src="https://unpkg.com/lucide@1.23.0"></script>
 		</head>
 		<body>
 			<nav class="navbar" role="navigation" aria-label="main navigation">
@@ -25,30 +25,30 @@ templ Layout(title string) {
 				<div class="navbar-menu">
 					<div class="navbar-start">
 						<a class="navbar-item" href="/tasks">
-							<i data-lucide="list-checks"></i>
+							@icons.ListChecks()
 							{ i18n.T(ctx, "nav.tasks") }
 						</a>
 						<a class="navbar-item" href="/time">
-							<i data-lucide="calendar-clock"></i>
+							@icons.CalendarClock()
 							{ i18n.T(ctx, "nav.time") }
 						</a>
 						<a class="navbar-item" href="/clients">
-							<i data-lucide="users"></i>
+							@icons.Users()
 							{ i18n.T(ctx, "nav.clients") }
 						</a>
 						<a class="navbar-item" href="/task-types">
-							<i data-lucide="tag"></i>
+							@icons.Tag()
 							{ i18n.T(ctx, "nav.task_types") }
 						</a>
 						<a class="navbar-item" href="/periods">
-							<i data-lucide="calendar-range"></i>
+							@icons.CalendarRange()
 							{ i18n.T(ctx, "nav.periods") }
 						</a>
 					</div>
 					<div class="navbar-end">
 						<div class="navbar-item has-dropdown is-hoverable">
 							<a class="navbar-link">
-								<i data-lucide="globe"></i>
+								@icons.Globe()
 								{ ctxi18n.Locale(ctx).Code().String() }
 							</a>
 							<div class="navbar-dropdown is-right">
@@ -58,15 +58,15 @@ templ Layout(title string) {
 						</div>
 						<div class="navbar-item has-dropdown is-hoverable">
 							<a class="navbar-link">
-								<i data-lucide="user"></i>
+								@icons.User()
 							</a>
 							<div class="navbar-dropdown is-right">
 								<a class="navbar-item" href="/account">
-									<i data-lucide="settings"></i>
+									@icons.Settings()
 									{ i18n.T(ctx, "nav.account") }
 								</a>
 								<a class="navbar-item" href="/logout">
-									<i data-lucide="log-out"></i>
+									@icons.LogOut()
 									{ i18n.T(ctx, "nav.logout") }
 								</a>
 							</div>
@@ -75,7 +75,6 @@ templ Layout(title string) {
 				</div>
 			</nav>
 			{ children... }
-			<script>lucide.createIcons();</script>
 		</body>
 	</html>
 }

@@ -1,6 +1,7 @@
 package templates
 
 import (
+	"github.com/bryanvaz/go-templ-lucide-icons/icons"
 	"strings"
 
 	"github.com/bloomyindev/time-tracker/internal/models"
@@ -37,7 +38,6 @@ templ Clients(clients []models.Client) {
 		<section class="section">
 			<div class="container">
 				<h1 class="title">{ i18n.T(ctx, "clients.title") }</h1>
-
 				<form method="post" action="/clients" class="box">
 					<div class="field has-addons">
 						<div class="control is-expanded">
@@ -45,22 +45,20 @@ templ Clients(clients []models.Client) {
 						</div>
 						<div class="control">
 							<button class="button is-primary" type="submit">
-								<i data-lucide="plus"></i>
+								@icons.Plus()
 								{ i18n.T(ctx, "clients.add") }
 							</button>
 						</div>
 					</div>
 				</form>
-
 				<div class="field">
 					<div class="control has-icons-left">
 						<input id="client-search" class="input" type="search" placeholder={ i18n.T(ctx, "clients.search_placeholder") }/>
 						<span class="icon is-left">
-							<i data-lucide="search"></i>
+							@icons.Search()
 						</span>
 					</div>
 				</div>
-
 				<table class="table is-fullwidth is-hoverable">
 					<thead>
 						<tr>
@@ -79,16 +77,16 @@ templ Clients(clients []models.Client) {
 								</td>
 								<td class="has-text-right">
 									<a class="button is-small" href={ templ.URL("/clients/" + itoa(c.ID)) }>
-										<i data-lucide="eye"></i>
+										@icons.Eye()
 										{ i18n.T(ctx, "clients.details") }
 									</a>
 									<a class="button is-small" href={ templ.URL("/clients/" + itoa(c.ID) + "/edit") }>
-										<i data-lucide="pencil"></i>
+										@icons.Pencil()
 										{ i18n.T(ctx, "clients.edit") }
 									</a>
 									<form method="post" action={ templ.URL("/clients/" + itoa(c.ID) + "/delete") } style="display:inline">
 										<button class="button is-small is-danger" type="submit">
-											<i data-lucide="trash-2"></i>
+											@icons.Trash2()
 											{ i18n.T(ctx, "clients.delete") }
 										</button>
 									</form>
@@ -110,7 +108,6 @@ templ EditClient(client models.Client, taskTypes []TaskTypeChoice) {
 		<section class="section">
 			<div class="container">
 				<h1 class="title">{ i18n.T(ctx, "clients.edit_title") }</h1>
-
 				<form method="post" action={ templ.URL("/clients/" + itoa(client.ID) + "/edit") } class="box">
 					<div class="field">
 						<label class="label">{ i18n.T(ctx, "clients.name") }</label>
@@ -118,7 +115,6 @@ templ EditClient(client models.Client, taskTypes []TaskTypeChoice) {
 							<input class="input" type="text" name="name" value={ client.Name } required/>
 						</div>
 					</div>
-
 					<div class="field">
 						<label class="checkbox">
 							<input type="checkbox" name="is_archived" value="1" checked?={ client.IsArchived }/>
@@ -126,7 +122,6 @@ templ EditClient(client models.Client, taskTypes []TaskTypeChoice) {
 						</label>
 						<p class="help">{ i18n.T(ctx, "clients.archived_help") }</p>
 					</div>
-
 					<div class="field">
 						<label class="label">{ i18n.T(ctx, "clients.task_types_allowed") }</label>
 						for _, choice := range taskTypes {
@@ -138,11 +133,10 @@ templ EditClient(client models.Client, taskTypes []TaskTypeChoice) {
 							</div>
 						}
 					</div>
-
 					<div class="field is-grouped">
 						<div class="control">
 							<button class="button is-primary" type="submit">
-								<i data-lucide="save"></i>
+								@icons.Save()
 								{ i18n.T(ctx, "clients.save") }
 							</button>
 						</div>
@@ -273,7 +267,6 @@ templ ClientDetail(client models.Client, tasks []models.Task, totalHours float64
 					}
 				</h1>
 				<h2 class="subtitle">{ i18n.T(ctx, "clients.hours_logged", i18n.M{"hours": formatHours(totalHours)}) }</h2>
-
 				<div class="field is-grouped mb-4">
 					<div class="control">
 						<a class="button is-link" href={ templ.SafeURL("/clients/" + itoa(client.ID) + "/report?period_id=" + itoa(selectedPeriodID) + "&task_type_id=" + itoa(selectedTaskTypeID)) } target="_blank">
@@ -282,12 +275,11 @@ templ ClientDetail(client models.Client, tasks []models.Task, totalHours float64
 					</div>
 					<div class="control">
 						<a class="button" href={ templ.URL("/clients/" + itoa(client.ID) + "/edit") }>
-							<i data-lucide="pencil"></i>
+							@icons.Pencil()
 							{ i18n.T(ctx, "clients.edit") }
 						</a>
 					</div>
 				</div>
-
 				if len(periods) > 0 || len(allTypes) > 0 {
 					<form method="get" class="box">
 						<div class="field is-grouped">
@@ -320,7 +312,6 @@ templ ClientDetail(client models.Client, tasks []models.Task, totalHours float64
 						</div>
 					</form>
 				}
-
 				if len(hoursByType) > 0 {
 					<table class="table is-fullwidth is-narrow">
 						<thead>
@@ -341,7 +332,6 @@ templ ClientDetail(client models.Client, tasks []models.Task, totalHours float64
 						</tbody>
 					</table>
 				}
-
 				<table class="table is-fullwidth is-hoverable">
 					<thead>
 						<tr>
@@ -364,7 +354,6 @@ templ ClientDetail(client models.Client, tasks []models.Task, totalHours float64
 						}
 					</tbody>
 				</table>
-
 			</div>
 		</section>
 	}

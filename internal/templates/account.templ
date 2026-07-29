@@ -2,6 +2,7 @@ package templates
 
 import (
 	"github.com/bloomyindev/time-tracker/internal/models"
+	"github.com/bryanvaz/go-templ-lucide-icons/icons"
 	"github.com/invopop/ctxi18n/i18n"
 )
 
@@ -26,7 +27,6 @@ templ Account(user models.User, errMsg string, successMsg string) {
 								</div>
 							</div>
 						</div>
-
 						<h2 class="subtitle">{ i18n.T(ctx, "account.daily_hours") }</h2>
 						<div class="box">
 							<form method="post" action="/account/hours">
@@ -47,14 +47,13 @@ templ Account(user models.User, errMsg string, successMsg string) {
 								<div class="field">
 									<div class="control">
 										<button class="button is-primary" type="submit">
-											<i data-lucide="save"></i>
+											@icons.Save()
 											{ i18n.T(ctx, "account.save") }
 										</button>
 									</div>
 								</div>
 							</form>
 						</div>
-
 						<h2 class="subtitle">{ i18n.T(ctx, "account.change_password") }</h2>
 						<div class="box">
 							<form method="post" action="/account/password">
@@ -73,7 +72,7 @@ templ Account(user models.User, errMsg string, successMsg string) {
 								<div class="field">
 									<div class="control">
 										<button class="button is-primary" type="submit">
-											<i data-lucide="save"></i>
+											@icons.Save()
 											{ i18n.T(ctx, "account.save") }
 										</button>
 									</div>
