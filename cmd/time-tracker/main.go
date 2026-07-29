@@ -14,6 +14,7 @@ import (
 	"github.com/bloomyindev/time-tracker/internal/db"
 	"github.com/bloomyindev/time-tracker/internal/handlers"
 	"github.com/bloomyindev/time-tracker/internal/i18n"
+	"github.com/bloomyindev/time-tracker/internal/redirect"
 	"github.com/bloomyindev/time-tracker/internal/service/auth"
 	"github.com/urfave/cli/v3"
 )
@@ -117,7 +118,7 @@ func serveCommand() *cli.Command {
 			mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServerFS(staticFS)))
 
 			log.Printf("listening on port %d", cfg.Port)
-			return http.ListenAndServe(fmt.Sprintf(":%d", cfg.Port), i18n.Middleware(mux))
+			return http.ListenAndServe(fmt.Sprintf(":%d", cfg.Port), i18n.Middleware(redirect.Middleware(mux)))
 		},
 	}
 }

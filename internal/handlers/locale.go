@@ -2,10 +2,10 @@ package handlers
 
 import (
 	"net/http"
-	"net/url"
 	"time"
 
 	"github.com/bloomyindev/time-tracker/internal/i18n"
+	"github.com/bloomyindev/time-tracker/internal/redirect"
 )
 
 func SetLocale(w http.ResponseWriter, r *http.Request) {
@@ -31,9 +31,6 @@ func SetLocale(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 	})
 
-	dest := "/"
-	if ref, err := url.Parse(r.Header.Get("Referer")); err == nil && ref.Host == r.Host {
-		dest = ref.RequestURI()
-	}
+	dest := redirect.Sanitize(r.URL.Query().Get(redirect.Param), "/")
 	http.Redirect(w, r, dest, http.StatusSeeOther)
 }

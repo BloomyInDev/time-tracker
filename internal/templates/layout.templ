@@ -52,8 +52,8 @@ templ Layout(title string) {
 								{ ctxi18n.Locale(ctx).Code().String() }
 							</a>
 							<div class="navbar-dropdown is-right">
-								<a class="navbar-item" href="/lang/en">EN</a>
-								<a class="navbar-item" href="/lang/fr">FR</a>
+								<a class="navbar-item" href={ langURL(ctx, "en") }>EN</a>
+								<a class="navbar-item" href={ langURL(ctx, "fr") }>FR</a>
 							</div>
 						</div>
 						<div class="navbar-item has-dropdown is-hoverable">

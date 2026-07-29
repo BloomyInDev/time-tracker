@@ -2,7 +2,7 @@ package templates
 
 import "github.com/invopop/ctxi18n/i18n"
 
-templ Login(errMsg string) {
+templ Login(errMsg string, redirectTo string) {
 	@Layout(i18n.T(ctx, "login.title")) {
 		<section class="section">
 			<div class="container">
@@ -13,6 +13,9 @@ templ Login(errMsg string) {
 								<p class="notification is-danger">{ errMsg }</p>
 							}
 							<form method="post" action="/login">
+								if redirectTo != "" {
+									<input type="hidden" name="redirect" value={ redirectTo }/>
+								}
 								<div class="field">
 									<label class="label">{ i18n.T(ctx, "login.email") }</label>
 									<div class="control">
