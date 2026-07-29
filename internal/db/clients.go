@@ -50,16 +50,6 @@ func ListClientsOrderedByName(conn *sql.DB, userID int64) ([]models.Client, erro
 	return scanClients(rows)
 }
 
-// ListActiveClientsOrderedByName returns only the clients that can still
-// receive new tasks, i.e. the non-archived ones.
-func ListActiveClientsOrderedByName(conn *sql.DB, userID int64) ([]models.Client, error) {
-	rows, err := conn.Query(`SELECT id, user_id, name, is_archived FROM clients WHERE user_id = ? AND is_archived = 0 ORDER BY name`, userID)
-	if err != nil {
-		return nil, err
-	}
-	return scanClients(rows)
-}
-
 func GetClient(conn *sql.DB, userID, id int64) (models.Client, error) {
 	var c models.Client
 	err := conn.QueryRow(`SELECT id, user_id, name, is_archived FROM clients WHERE id = ? AND user_id = ?`, id, userID).
@@ -67,15 +57,10 @@ func GetClient(conn *sql.DB, userID, id int64) (models.Client, error) {
 	return c, err
 }
 
-func UpdateClient(conn *sql.DB, userID, id int64, name string) error {
-	_, err := conn.Exec(`UPDATE clients SET name = ? WHERE id = ? AND user_id = ?`, name, id, userID)
-	return err
-}
-
-// SetClientArchived archives or unarchives a client. An archived client
+// UpdateClient saves the client's editable fields. An archived client
 // keeps its history but accepts no new tasks.
-func SetClientArchived(conn *sql.DB, userID, id int64, archived bool) error {
-	_, err := conn.Exec(`UPDATE clients SET is_archived = ? WHERE id = ? AND user_id = ?`, archived, id, userID)
+func UpdateClient(conn *sql.DB, userID, id int64, name string, archived bool) error {
+	_, err := conn.Exec(`UPDATE clients SET name = ?, is_archived = ? WHERE id = ? AND user_id = ?`, name, archived, id, userID)
 	return err
 }
 

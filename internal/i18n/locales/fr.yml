@@ -21,7 +21,6 @@ fr:
     add: "Ajouter"
     name: "Nom"
     details: "Détails"
-    rename: "Renommer"
     edit_title: "Modifier le client"
     cancel: "Annuler"
     delete: "Supprimer"
@@ -44,8 +43,8 @@ fr:
     task_type: "Type de tâche"
     search_placeholder: "Rechercher des clients..."
     archived: "Archivé"
-    archive: "Archiver"
-    unarchive: "Désarchiver"
+    edit: "Modifier"
+    archived_help: "Un client archivé garde son historique mais n'accepte plus de nouvelles tâches."
   task_types:
     title: "Types de tâches"
     name_placeholder: "Nom du type de tâche"

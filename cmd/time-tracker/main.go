@@ -81,10 +81,8 @@ func serveCommand() *cli.Command {
 			mux.Handle("GET /clients/{id}", authSvc.RequireAuth(handlers.ClientDetail(conn)))
 			mux.Handle("GET /clients/{id}/report", authSvc.RequireAuth(handlers.ClientReport(conn)))
 			mux.Handle("GET /clients/{id}/edit", authSvc.RequireAuth(handlers.EditClientForm(conn)))
-			mux.Handle("POST /clients/{id}/rename", authSvc.RequireAuth(handlers.RenameClient(conn)))
-			mux.Handle("POST /clients/{id}/archive", authSvc.RequireAuth(handlers.SetClientArchived(conn)))
+			mux.Handle("POST /clients/{id}/edit", authSvc.RequireAuth(handlers.UpdateClient(conn)))
 			mux.Handle("POST /clients/{id}/delete", authSvc.RequireAuth(handlers.DeleteClient(conn)))
-			mux.Handle("POST /clients/{id}/task-types", authSvc.RequireAuth(handlers.SyncClientTaskTypes(conn)))
 
 			mux.Handle("GET /task-types", authSvc.RequireAuth(handlers.ListTaskTypes(conn)))
 			mux.Handle("POST /task-types", authSvc.RequireAuth(handlers.CreateTaskType(conn)))

@@ -21,7 +21,6 @@ en:
     add: "Add"
     name: "Name"
     details: "Details"
-    rename: "Rename"
     edit_title: "Edit client"
     cancel: "Cancel"
     delete: "Delete"
@@ -44,8 +43,8 @@ en:
     task_type: "Task type"
     search_placeholder: "Search clients..."
     archived: "Archived"
-    archive: "Archive"
-    unarchive: "Unarchive"
+    edit: "Edit"
+    archived_help: "An archived client keeps its history but accepts no new tasks."
   task_types:
     title: "Task Types"
     name_placeholder: "Task type name"

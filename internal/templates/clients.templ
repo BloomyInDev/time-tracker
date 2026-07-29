@@ -84,23 +84,8 @@ templ Clients(clients []models.Client) {
 									</a>
 									<a class="button is-small" href={ templ.URL("/clients/" + itoa(c.ID) + "/edit") }>
 										<i data-lucide="pencil"></i>
-										{ i18n.T(ctx, "clients.rename") }
+										{ i18n.T(ctx, "clients.edit") }
 									</a>
-									<form method="post" action={ templ.URL("/clients/" + itoa(c.ID) + "/archive") } style="display:inline">
-										if c.IsArchived {
-											<input type="hidden" name="archived" value="0"/>
-											<button class="button is-small" type="submit">
-												<i data-lucide="archive-restore"></i>
-												{ i18n.T(ctx, "clients.unarchive") }
-											</button>
-										} else {
-											<input type="hidden" name="archived" value="1"/>
-											<button class="button is-small" type="submit">
-												<i data-lucide="archive"></i>
-												{ i18n.T(ctx, "clients.archive") }
-											</button>
-										}
-									</form>
 									<form method="post" action={ templ.URL("/clients/" + itoa(c.ID) + "/delete") } style="display:inline">
 										<button class="button is-small is-danger" type="submit">
 											<i data-lucide="trash-2"></i>
@@ -118,19 +103,42 @@ templ Clients(clients []models.Client) {
 	}
 }
 
-templ EditClient(client models.Client) {
+// EditClient is the single page holding everything editable about a
+// client: name, archived state and allowed task types.
+templ EditClient(client models.Client, taskTypes []TaskTypeChoice) {
 	@Layout(i18n.T(ctx, "clients.edit_title")) {
 		<section class="section">
 			<div class="container">
 				<h1 class="title">{ i18n.T(ctx, "clients.edit_title") }</h1>
 
-				<form method="post" action={ templ.URL("/clients/" + itoa(client.ID) + "/rename") } class="box">
+				<form method="post" action={ templ.URL("/clients/" + itoa(client.ID) + "/edit") } class="box">
 					<div class="field">
 						<label class="label">{ i18n.T(ctx, "clients.name") }</label>
 						<div class="control">
 							<input class="input" type="text" name="name" value={ client.Name } required/>
 						</div>
 					</div>
+
+					<div class="field">
+						<label class="checkbox">
+							<input type="checkbox" name="is_archived" value="1" checked?={ client.IsArchived }/>
+							{ i18n.T(ctx, "clients.archived") }
+						</label>
+						<p class="help">{ i18n.T(ctx, "clients.archived_help") }</p>
+					</div>
+
+					<div class="field">
+						<label class="label">{ i18n.T(ctx, "clients.task_types_allowed") }</label>
+						for _, choice := range taskTypes {
+							<div class="control">
+								<label class="checkbox">
+									<input type="checkbox" name="task_type_id" value={ itoa(choice.TaskType.ID) } checked?={ choice.Assigned }/>
+									{ choice.TaskType.Name }
+								</label>
+							</div>
+						}
+					</div>
+
 					<div class="field is-grouped">
 						<div class="control">
 							<button class="button is-primary" type="submit">
@@ -254,7 +262,7 @@ templ ClientReport(view ClientReportView) {
 	</html>
 }
 
-templ ClientDetail(client models.Client, taskTypes []TaskTypeChoice, tasks []models.Task, totalHours float64, hoursByType map[int64]float64, allTypes []models.TaskType, periods []models.Period, selectedPeriodID int64, selectedTaskTypeID int64) {
+templ ClientDetail(client models.Client, tasks []models.Task, totalHours float64, hoursByType map[int64]float64, allTypes []models.TaskType, periods []models.Period, selectedPeriodID int64, selectedTaskTypeID int64) {
 	@Layout(client.Name) {
 		<section class="section">
 			<div class="container">
@@ -266,10 +274,18 @@ templ ClientDetail(client models.Client, taskTypes []TaskTypeChoice, tasks []mod
 				</h1>
 				<h2 class="subtitle">{ i18n.T(ctx, "clients.hours_logged", i18n.M{"hours": formatHours(totalHours)}) }</h2>
 
-				<div class="field mb-4">
-					<a class="button is-link" href={ templ.SafeURL("/clients/" + itoa(client.ID) + "/report?period_id=" + itoa(selectedPeriodID) + "&task_type_id=" + itoa(selectedTaskTypeID)) } target="_blank">
-						{ i18n.T(ctx, "clients.export_pdf") }
-					</a>
+				<div class="field is-grouped mb-4">
+					<div class="control">
+						<a class="button is-link" href={ templ.SafeURL("/clients/" + itoa(client.ID) + "/report?period_id=" + itoa(selectedPeriodID) + "&task_type_id=" + itoa(selectedTaskTypeID)) } target="_blank">
+							{ i18n.T(ctx, "clients.export_pdf") }
+						</a>
+					</div>
+					<div class="control">
+						<a class="button" href={ templ.URL("/clients/" + itoa(client.ID) + "/edit") }>
+							<i data-lucide="pencil"></i>
+							{ i18n.T(ctx, "clients.edit") }
+						</a>
+					</div>
 				</div>
 
 				if len(periods) > 0 || len(allTypes) > 0 {
@@ -349,26 +365,6 @@ templ ClientDetail(client models.Client, taskTypes []TaskTypeChoice, tasks []mod
 					</tbody>
 				</table>
 
-				<h2 class="subtitle">{ i18n.T(ctx, "clients.task_types_allowed") }</h2>
-
-				<form method="post" action={ templ.URL("/clients/" + itoa(client.ID) + "/task-types") } class="box">
-					for _, choice := range taskTypes {
-						<div class="field">
-							<label class="checkbox">
-								<input type="checkbox" name="task_type_id" value={ itoa(choice.TaskType.ID) } checked?={ choice.Assigned }/>
-								{ choice.TaskType.Name }
-							</label>
-						</div>
-					}
-					<div class="field">
-						<div class="control">
-							<button class="button is-primary" type="submit">
-								<i data-lucide="save"></i>
-								{ i18n.T(ctx, "clients.save") }
-							</button>
-						</div>
-					</div>
-				</form>
 			</div>
 		</section>
 	}

@@ -39,6 +39,31 @@ func CreateClient(conn *sql.DB) http.HandlerFunc {
 	}
 }
 
+// taskTypeChoices lists the user's task types, each flagged with whether
+// it is currently assigned to the given client.
+func taskTypeChoices(conn *sql.DB, userID, clientID int64) ([]templates.TaskTypeChoice, error) {
+	assigned, err := db.ListTaskTypesForClient(conn, clientID)
+	if err != nil {
+		return nil, err
+	}
+	assignedIDs := make(map[int64]bool, len(assigned))
+	for _, t := range assigned {
+		assignedIDs[t.ID] = true
+	}
+
+	allTypes, err := db.ListTaskTypes(conn, userID)
+	if err != nil {
+		return nil, err
+	}
+	choices := make([]templates.TaskTypeChoice, len(allTypes))
+	for i, t := range allTypes {
+		choices[i] = templates.TaskTypeChoice{TaskType: t, Assigned: assignedIDs[t.ID]}
+	}
+	return choices, nil
+}
+
+// EditClientForm renders the single page that edits everything about a
+// client: its name, its archived state and its allowed task types.
 func EditClientForm(conn *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, _ := auth.UserIDFromContext(r.Context())
@@ -52,11 +77,18 @@ func EditClientForm(conn *sql.DB) http.HandlerFunc {
 			http.Error(w, "client not found", http.StatusNotFound)
 			return
 		}
-		templates.EditClient(client).Render(r.Context(), w)
+		choices, err := taskTypeChoices(conn, userID, id)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		templates.EditClient(client, choices).Render(r.Context(), w)
 	}
 }
 
-func RenameClient(conn *sql.DB) http.HandlerFunc {
+// UpdateClient saves the whole edit form: name, archived flag and the
+// client's allowed task types.
+func UpdateClient(conn *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, _ := auth.UserIDFromContext(r.Context())
 		id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
@@ -64,11 +96,20 @@ func RenameClient(conn *sql.DB) http.HandlerFunc {
 			http.Error(w, "invalid id", http.StatusBadRequest)
 			return
 		}
+		if _, err := db.GetClient(conn, userID, id); err != nil {
+			http.Error(w, "client not found", http.StatusNotFound)
+			return
+		}
 		if err := r.ParseForm(); err != nil {
 			http.Error(w, "bad request", http.StatusBadRequest)
 			return
 		}
-		if err := db.UpdateClient(conn, userID, id, r.FormValue("name")); err != nil {
+
+		if err := db.UpdateClient(conn, userID, id, r.FormValue("name"), r.FormValue("is_archived") == "1"); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if err := syncClientTaskTypes(conn, userID, id, r.Form["task_type_id"]); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -76,27 +117,33 @@ func RenameClient(conn *sql.DB) http.HandlerFunc {
 	}
 }
 
-// SetClientArchived toggles a client's archived flag. The desired state
-// comes from the "archived" form value so the same handler serves both
-// the archive and unarchive buttons.
-func SetClientArchived(conn *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		userID, _ := auth.UserIDFromContext(r.Context())
-		id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+// syncClientTaskTypes assigns exactly the checked task types to the
+// client and unassigns the others.
+func syncClientTaskTypes(conn *sql.DB, userID, clientID int64, checkedIDs []string) error {
+	checked := make(map[int64]bool, len(checkedIDs))
+	for _, raw := range checkedIDs {
+		id, err := strconv.ParseInt(raw, 10, 64)
 		if err != nil {
-			http.Error(w, "invalid id", http.StatusBadRequest)
-			return
+			return err
 		}
-		if err := r.ParseForm(); err != nil {
-			http.Error(w, "bad request", http.StatusBadRequest)
-			return
-		}
-		if err := db.SetClientArchived(conn, userID, id, r.FormValue("archived") == "1"); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		http.Redirect(w, r, "/clients", http.StatusSeeOther)
+		checked[id] = true
 	}
+
+	allTypes, err := db.ListTaskTypes(conn, userID)
+	if err != nil {
+		return err
+	}
+	for _, t := range allTypes {
+		if checked[t.ID] {
+			err = db.AssignTaskTypeToClient(conn, clientID, t.ID)
+		} else {
+			err = db.UnassignTaskTypeFromClient(conn, clientID, t.ID)
+		}
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func DeleteClient(conn *sql.DB) http.HandlerFunc {
@@ -131,24 +178,10 @@ func ClientDetail(conn *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		assigned, err := db.ListTaskTypesForClient(conn, id)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		assignedIDs := make(map[int64]bool, len(assigned))
-		for _, t := range assigned {
-			assignedIDs[t.ID] = true
-		}
-
 		allTypes, err := db.ListTaskTypes(conn, userID)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
-		}
-		taskTypeChoices := make([]templates.TaskTypeChoice, len(allTypes))
-		for i, t := range allTypes {
-			taskTypeChoices[i] = templates.TaskTypeChoice{TaskType: t, Assigned: assignedIDs[t.ID]}
 		}
 
 		periods, err := db.ListPeriods(conn, userID)
@@ -186,7 +219,7 @@ func ClientDetail(conn *sql.DB) http.HandlerFunc {
 			hoursByType[t.TaskTypeID] += t.HoursSpent
 		}
 
-		templates.ClientDetail(client, taskTypeChoices, tasks, totalHours, hoursByType, allTypes, periods, selectedPeriodID, selectedTaskTypeID).Render(r.Context(), w)
+		templates.ClientDetail(client, tasks, totalHours, hoursByType, allTypes, periods, selectedPeriodID, selectedTaskTypeID).Render(r.Context(), w)
 	}
 }
 
@@ -287,54 +320,5 @@ func ClientReport(conn *sql.DB) http.HandlerFunc {
 			Periods:      periods,
 		}
 		templates.ClientReport(view).Render(r.Context(), w)
-	}
-}
-
-func SyncClientTaskTypes(conn *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		userID, _ := auth.UserIDFromContext(r.Context())
-		clientID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-		if err != nil {
-			http.Error(w, "invalid id", http.StatusBadRequest)
-			return
-		}
-		if _, err := db.GetClient(conn, userID, clientID); err != nil {
-			http.Error(w, "client not found", http.StatusNotFound)
-			return
-		}
-
-		if err := r.ParseForm(); err != nil {
-			http.Error(w, "bad request", http.StatusBadRequest)
-			return
-		}
-
-		checked := make(map[int64]bool)
-		for _, raw := range r.Form["task_type_id"] {
-			id, err := strconv.ParseInt(raw, 10, 64)
-			if err != nil {
-				http.Error(w, "invalid task_type_id", http.StatusBadRequest)
-				return
-			}
-			checked[id] = true
-		}
-
-		allTypes, err := db.ListTaskTypes(conn, userID)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		for _, t := range allTypes {
-			if checked[t.ID] {
-				err = db.AssignTaskTypeToClient(conn, clientID, t.ID)
-			} else {
-				err = db.UnassignTaskTypeFromClient(conn, clientID, t.ID)
-			}
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-		}
-
-		http.Redirect(w, r, "/clients/"+strconv.FormatInt(clientID, 10), http.StatusSeeOther)
 	}
 }
