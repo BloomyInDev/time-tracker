@@ -1,110 +1,95 @@
 package handlers
 
 import (
-	"database/sql"
 	"net/http"
-	"strconv"
 
 	"github.com/bloomyindev/time-tracker/internal/db"
-	"github.com/bloomyindev/time-tracker/internal/service/auth"
 	"github.com/bloomyindev/time-tracker/internal/templates"
+	"github.com/go-chi/chi/v5"
 )
 
-func ListPeriods(conn *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		userID, _ := auth.UserIDFromContext(r.Context())
-		periods, err := db.ListPeriods(conn, userID)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		templates.Periods(periods).Render(r.Context(), w)
-	}
+func (h *Handlers) PeriodsRouter() chi.Router {
+	r := chi.NewRouter()
+	r.Get("/", h.listPeriods)
+	r.Post("/", h.createPeriod)
+	r.Post("/{id}/default", h.setDefaultPeriod)
+	r.Get("/{id}/edit", h.editPeriodForm)
+	r.Post("/{id}/rename", h.renamePeriod)
+	r.Post("/{id}/delete", h.deletePeriod)
+	return r
 }
 
-func CreatePeriod(conn *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		userID, _ := auth.UserIDFromContext(r.Context())
-		if err := r.ParseForm(); err != nil {
-			http.Error(w, "bad request", http.StatusBadRequest)
-			return
-		}
-
-		if _, err := db.CreatePeriod(conn, userID, r.FormValue("name")); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		http.Redirect(w, r, "/periods", http.StatusSeeOther)
+func (h *Handlers) listPeriods(w http.ResponseWriter, r *http.Request) {
+	periods, err := db.ListPeriods(h.DB, userID(r))
+	if err != nil {
+		fail(w, err)
+		return
 	}
+	templates.Periods(periods).Render(r.Context(), w)
 }
 
-func SetDefaultPeriod(conn *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		userID, _ := auth.UserIDFromContext(r.Context())
-		id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-		if err != nil {
-			http.Error(w, "invalid id", http.StatusBadRequest)
-			return
-		}
-
-		if err := db.SetDefaultPeriod(conn, userID, id); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		http.Redirect(w, r, "/periods", http.StatusSeeOther)
+func (h *Handlers) createPeriod(w http.ResponseWriter, r *http.Request) {
+	if !parseForm(w, r) {
+		return
 	}
+
+	if _, err := db.CreatePeriod(h.DB, userID(r), r.FormValue("name")); err != nil {
+		fail(w, err)
+		return
+	}
+	http.Redirect(w, r, "/periods", http.StatusSeeOther)
 }
 
-func EditPeriodForm(conn *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		userID, _ := auth.UserIDFromContext(r.Context())
-		id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-		if err != nil {
-			http.Error(w, "invalid id", http.StatusBadRequest)
-			return
-		}
-		period, err := db.GetPeriod(conn, userID, id)
-		if err != nil {
-			http.Error(w, "period not found", http.StatusNotFound)
-			return
-		}
-		templates.EditPeriod(period).Render(r.Context(), w)
+func (h *Handlers) setDefaultPeriod(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(w, r)
+	if !ok {
+		return
 	}
+
+	if err := db.SetDefaultPeriod(h.DB, userID(r), id); err != nil {
+		fail(w, err)
+		return
+	}
+	http.Redirect(w, r, "/periods", http.StatusSeeOther)
 }
 
-func RenamePeriod(conn *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		userID, _ := auth.UserIDFromContext(r.Context())
-		id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-		if err != nil {
-			http.Error(w, "invalid id", http.StatusBadRequest)
-			return
-		}
-		if err := r.ParseForm(); err != nil {
-			http.Error(w, "bad request", http.StatusBadRequest)
-			return
-		}
-		if err := db.UpdatePeriod(conn, userID, id, r.FormValue("name")); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		http.Redirect(w, r, "/periods", http.StatusSeeOther)
+func (h *Handlers) editPeriodForm(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(w, r)
+	if !ok {
+		return
 	}
+	period, err := db.GetPeriod(h.DB, userID(r), id)
+	if err != nil {
+		http.Error(w, "period not found", http.StatusNotFound)
+		return
+	}
+	templates.EditPeriod(period).Render(r.Context(), w)
 }
 
-func DeletePeriod(conn *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		userID, _ := auth.UserIDFromContext(r.Context())
-		id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-		if err != nil {
-			http.Error(w, "invalid id", http.StatusBadRequest)
-			return
-		}
-
-		if err := db.DeletePeriod(conn, userID, id); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		http.Redirect(w, r, "/periods", http.StatusSeeOther)
+func (h *Handlers) renamePeriod(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(w, r)
+	if !ok {
+		return
 	}
+	if !parseForm(w, r) {
+		return
+	}
+	if err := db.UpdatePeriod(h.DB, userID(r), id, r.FormValue("name")); err != nil {
+		fail(w, err)
+		return
+	}
+	http.Redirect(w, r, "/periods", http.StatusSeeOther)
+}
+
+func (h *Handlers) deletePeriod(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(w, r)
+	if !ok {
+		return
+	}
+
+	if err := db.DeletePeriod(h.DB, userID(r), id); err != nil {
+		fail(w, err)
+		return
+	}
+	http.Redirect(w, r, "/periods", http.StatusSeeOther)
 }

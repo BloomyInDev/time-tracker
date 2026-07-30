@@ -1,93 +1,81 @@
 package handlers
 
 import (
-	"database/sql"
 	"net/http"
-	"strconv"
 
 	"github.com/bloomyindev/time-tracker/internal/db"
-	"github.com/bloomyindev/time-tracker/internal/service/auth"
 	"github.com/bloomyindev/time-tracker/internal/templates"
+	"github.com/go-chi/chi/v5"
 )
 
-func ListTaskTypes(conn *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		userID, _ := auth.UserIDFromContext(r.Context())
-		types, err := db.ListTaskTypes(conn, userID)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		templates.TaskTypes(types).Render(r.Context(), w)
-	}
+func (h *Handlers) TaskTypesRouter() chi.Router {
+	r := chi.NewRouter()
+	r.Get("/", h.listTaskTypes)
+	r.Post("/", h.createTaskType)
+	r.Get("/{id}/edit", h.editTaskTypeForm)
+	r.Post("/{id}/rename", h.renameTaskType)
+	r.Post("/{id}/delete", h.deleteTaskType)
+	return r
 }
 
-func CreateTaskType(conn *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		userID, _ := auth.UserIDFromContext(r.Context())
-		if err := r.ParseForm(); err != nil {
-			http.Error(w, "bad request", http.StatusBadRequest)
-			return
-		}
-
-		if _, err := db.CreateTaskType(conn, userID, r.FormValue("name")); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		http.Redirect(w, r, "/task-types", http.StatusSeeOther)
+func (h *Handlers) listTaskTypes(w http.ResponseWriter, r *http.Request) {
+	types, err := db.ListTaskTypes(h.DB, userID(r))
+	if err != nil {
+		fail(w, err)
+		return
 	}
+	templates.TaskTypes(types).Render(r.Context(), w)
 }
 
-func EditTaskTypeForm(conn *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		userID, _ := auth.UserIDFromContext(r.Context())
-		id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-		if err != nil {
-			http.Error(w, "invalid id", http.StatusBadRequest)
-			return
-		}
-		taskType, err := db.GetTaskType(conn, userID, id)
-		if err != nil {
-			http.Error(w, "task type not found", http.StatusNotFound)
-			return
-		}
-		templates.EditTaskType(taskType).Render(r.Context(), w)
+func (h *Handlers) createTaskType(w http.ResponseWriter, r *http.Request) {
+	if !parseForm(w, r) {
+		return
 	}
+
+	if _, err := db.CreateTaskType(h.DB, userID(r), r.FormValue("name")); err != nil {
+		fail(w, err)
+		return
+	}
+	http.Redirect(w, r, "/task-types", http.StatusSeeOther)
 }
 
-func RenameTaskType(conn *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		userID, _ := auth.UserIDFromContext(r.Context())
-		id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-		if err != nil {
-			http.Error(w, "invalid id", http.StatusBadRequest)
-			return
-		}
-		if err := r.ParseForm(); err != nil {
-			http.Error(w, "bad request", http.StatusBadRequest)
-			return
-		}
-		if err := db.UpdateTaskType(conn, userID, id, r.FormValue("name")); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		http.Redirect(w, r, "/task-types", http.StatusSeeOther)
+func (h *Handlers) editTaskTypeForm(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(w, r)
+	if !ok {
+		return
 	}
+	taskType, err := db.GetTaskType(h.DB, userID(r), id)
+	if err != nil {
+		http.Error(w, "task type not found", http.StatusNotFound)
+		return
+	}
+	templates.EditTaskType(taskType).Render(r.Context(), w)
 }
 
-func DeleteTaskType(conn *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		userID, _ := auth.UserIDFromContext(r.Context())
-		id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-		if err != nil {
-			http.Error(w, "invalid id", http.StatusBadRequest)
-			return
-		}
-
-		if err := db.DeleteTaskType(conn, userID, id); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		http.Redirect(w, r, "/task-types", http.StatusSeeOther)
+func (h *Handlers) renameTaskType(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(w, r)
+	if !ok {
+		return
 	}
+	if !parseForm(w, r) {
+		return
+	}
+	if err := db.UpdateTaskType(h.DB, userID(r), id, r.FormValue("name")); err != nil {
+		fail(w, err)
+		return
+	}
+	http.Redirect(w, r, "/task-types", http.StatusSeeOther)
+}
+
+func (h *Handlers) deleteTaskType(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(w, r)
+	if !ok {
+		return
+	}
+
+	if err := db.DeleteTaskType(h.DB, userID(r), id); err != nil {
+		fail(w, err)
+		return
+	}
+	http.Redirect(w, r, "/task-types", http.StatusSeeOther)
 }

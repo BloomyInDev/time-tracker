@@ -5,11 +5,16 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"testing/fstest"
 
 	appi18n "github.com/bloomyindev/time-tracker/internal/i18n"
 	"github.com/bloomyindev/time-tracker/internal/redirect"
 	"github.com/invopop/ctxi18n"
 )
+
+// testHandlers builds a Handlers with no dependencies, for the routes
+// that touch neither the database nor a session.
+func testHandlers() *Handlers { return &Handlers{} }
 
 func TestMain(m *testing.M) {
 	if err := appi18n.Load(); err != nil {
@@ -37,7 +42,7 @@ func localeReq(target string) *http.Request {
 
 func TestLoginPageCarriesRedirect(t *testing.T) {
 	w := httptest.NewRecorder()
-	Login(w, localeReq("/login?redirect=%2Ftasks%3Fclient%3D3"))
+	testHandlers().loginForm(w, localeReq("/login?redirect=%2Ftasks%3Fclient%3D3"))
 
 	if body := w.Body.String(); !strings.Contains(body, `name="redirect" value="/tasks?client=3"`) {
 		t.Errorf("hidden redirect field missing, body:\n%s", body)
@@ -46,7 +51,7 @@ func TestLoginPageCarriesRedirect(t *testing.T) {
 
 func TestLoginPageDropsUnsafeRedirect(t *testing.T) {
 	w := httptest.NewRecorder()
-	Login(w, localeReq("/login?redirect=https%3A%2F%2Fevil.example"))
+	testHandlers().loginForm(w, localeReq("/login?redirect=https%3A%2F%2Fevil.example"))
 
 	if strings.Contains(w.Body.String(), `name="redirect"`) {
 		t.Error("unsafe redirect kept as the login form destination")
@@ -55,7 +60,7 @@ func TestLoginPageDropsUnsafeRedirect(t *testing.T) {
 
 func TestLocaleLinksReturnToCurrentPage(t *testing.T) {
 	w := httptest.NewRecorder()
-	Login(w, localeReq("/login?redirect=%2Ftasks"))
+	testHandlers().loginForm(w, localeReq("/login?redirect=%2Ftasks"))
 
 	body := w.Body.String()
 	for _, want := range []string{
@@ -82,9 +87,8 @@ func TestSetLocaleRedirect(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := httptest.NewRequest(http.MethodGet, "/lang/fr"+tt.query, nil)
-			r.SetPathValue("code", "fr")
 			w := httptest.NewRecorder()
-			SetLocale(w, r)
+			testHandlers().Router(fstest.MapFS{}).ServeHTTP(w, r)
 
 			if w.Code != http.StatusSeeOther {
 				t.Errorf("status = %d, want %d", w.Code, http.StatusSeeOther)
