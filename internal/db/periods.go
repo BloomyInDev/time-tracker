@@ -71,7 +71,24 @@ func UpdatePeriod(conn *sql.DB, userID, id int64, name string) error {
 	return err
 }
 
+// DeletePeriod removes a period and detaches the tasks filed under it. A
+// period is only a label for grouping, so losing it must not lose the hours:
+// the tasks stay, with no period. Both statements run on the transaction, not
+// on the pool, which is capped at a single connection.
 func DeletePeriod(conn *sql.DB, userID, id int64) error {
-	_, err := conn.Exec(`DELETE FROM periods WHERE id = ? AND user_id = ?`, id, userID)
-	return err
+	tx, err := conn.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	if _, err := tx.Exec(
+		`UPDATE tasks SET period_id = NULL WHERE period_id = ? AND user_id = ?`, id, userID,
+	); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(`DELETE FROM periods WHERE id = ? AND user_id = ?`, id, userID); err != nil {
+		return err
+	}
+	return tx.Commit()
 }

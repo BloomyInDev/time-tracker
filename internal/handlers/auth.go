@@ -33,15 +33,24 @@ func (h *Handlers) loginSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.setSessionCookie(w, token, int((24 * time.Hour).Seconds()))
+	http.Redirect(w, r, dest, http.StatusSeeOther)
+}
+
+// setSessionCookie writes the session cookie. Login and logout both go through
+// it so their attributes can't drift: a browser replaces a cookie only when the
+// name, path and domain all match, so a clear that disagrees with the set
+// leaves the original in place.
+func (h *Handlers) setSessionCookie(w http.ResponseWriter, value string, maxAge int) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     auth.CookieName,
-		Value:    token,
+		Value:    value,
 		Path:     "/",
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
-		MaxAge:   int((24 * time.Hour).Seconds()),
+		Secure:   h.Config.SecureCookies,
+		MaxAge:   maxAge,
 	})
-	http.Redirect(w, r, dest, http.StatusSeeOther)
 }
 
 func (h *Handlers) logout(w http.ResponseWriter, r *http.Request) {
@@ -49,12 +58,6 @@ func (h *Handlers) logout(w http.ResponseWriter, r *http.Request) {
 		h.Auth.Logout(cookie.Value)
 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     auth.CookieName,
-		Value:    "",
-		Path:     "/",
-		HttpOnly: true,
-		MaxAge:   -1,
-	})
+	h.setSessionCookie(w, "", -1)
 	http.Redirect(w, r, "/login", http.StatusSeeOther)
 }

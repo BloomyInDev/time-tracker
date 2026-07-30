@@ -64,7 +64,13 @@ func UpdateClient(conn *sql.DB, userID, id int64, name string, archived bool) er
 	return err
 }
 
+// DeleteClient removes a client. It returns ErrInUse when tasks are still
+// logged against it: those hours are the point of the app, so the client has
+// to be archived rather than deleted. Its task type assignments cascade away.
 func DeleteClient(conn *sql.DB, userID, id int64) error {
 	_, err := conn.Exec(`DELETE FROM clients WHERE id = ? AND user_id = ?`, id, userID)
+	if isForeignKeyErr(err) {
+		return ErrInUse
+	}
 	return err
 }

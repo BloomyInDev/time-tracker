@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"database/sql"
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -148,7 +149,12 @@ func (h *Handlers) deleteClient(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := db.DeleteClient(h.DB, userID(r), id); err != nil {
+	err := db.DeleteClient(h.DB, userID(r), id)
+	if errors.Is(err, db.ErrInUse) {
+		http.Error(w, "client still has tasks; archive it instead", http.StatusConflict)
+		return
+	}
+	if err != nil {
 		fail(w, err)
 		return
 	}

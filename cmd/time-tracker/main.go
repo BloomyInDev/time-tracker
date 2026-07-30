@@ -34,19 +34,19 @@ func main() {
 	}
 }
 
-// dbPathFlag overrides the database path (env: DB_PATH). A fresh flag is
-// returned per command so each owns its own value.
+// dbPathFlag overrides the database path (env: TRACKER_DB_PATH). A fresh flag
+// is returned per command so each owns its own value.
 func dbPathFlag() *cli.StringFlag {
 	return &cli.StringFlag{
 		Name:    "db-path",
 		Usage:   "path to the sqlite database file",
 		Value:   config.Load().DBPath,
-		Sources: cli.EnvVars("DB_PATH"),
+		Sources: cli.EnvVars("TRACKER_DB_PATH"),
 	}
 }
 
 func openDB(cmd *cli.Command) (*sql.DB, error) {
-	return db.Open(cmd.String("db-path"))
+	return db.Open(cmd.String("db-path"), db.Options{WAL: config.Load().SQLiteWAL})
 }
 
 func serveCommand() *cli.Command {
@@ -65,13 +65,14 @@ func serveCommand() *cli.Command {
 			if err != nil {
 				return fmt.Errorf("open db: %w", err)
 			}
+			defer conn.Close()
 
 			staticFS, err := fs.Sub(assets.Static, "static")
 			if err != nil {
 				return fmt.Errorf("mount static assets: %w", err)
 			}
 
-			h := handlers.New(conn, auth.NewService(conn, cfg.JWTSecret))
+			h := handlers.New(conn, auth.NewService(conn, cfg.JWTSecret), cfg)
 
 			log.Printf("listening on port %d", cfg.Port)
 			return http.ListenAndServe(fmt.Sprintf(":%d", cfg.Port), h.Router(staticFS))

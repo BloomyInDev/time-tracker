@@ -30,6 +30,7 @@ func (h *Handlers) setLocale(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 		MaxAge:   int((365 * 24 * time.Hour).Seconds()),
 		SameSite: http.SameSiteLaxMode,
+		Secure:   h.Config.SecureCookies,
 	})
 
 	dest := redirect.Sanitize(r.URL.Query().Get(redirect.Param), "/")

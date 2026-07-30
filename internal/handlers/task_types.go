@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/bloomyindev/time-tracker/internal/db"
@@ -73,7 +74,12 @@ func (h *Handlers) deleteTaskType(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := db.DeleteTaskType(h.DB, userID(r), id); err != nil {
+	err := db.DeleteTaskType(h.DB, userID(r), id)
+	if errors.Is(err, db.ErrInUse) {
+		http.Error(w, "task type is still used by tasks", http.StatusConflict)
+		return
+	}
+	if err != nil {
 		fail(w, err)
 		return
 	}

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/bloomyindev/time-tracker/internal/config"
 	"github.com/bloomyindev/time-tracker/internal/service/auth"
 	"github.com/go-chi/chi/v5"
 )
@@ -13,12 +14,13 @@ import (
 // methods on it, which is what lets each resource file expose its own
 // sub-router.
 type Handlers struct {
-	DB   *sql.DB
-	Auth *auth.Service
+	DB     *sql.DB
+	Auth   *auth.Service
+	Config config.Config
 }
 
-func New(conn *sql.DB, authSvc *auth.Service) *Handlers {
-	return &Handlers{DB: conn, Auth: authSvc}
+func New(conn *sql.DB, authSvc *auth.Service, cfg config.Config) *Handlers {
+	return &Handlers{DB: conn, Auth: authSvc, Config: cfg}
 }
 
 // userID returns the authenticated user for the request. It panics if the
