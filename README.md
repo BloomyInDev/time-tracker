@@ -109,6 +109,7 @@ The app is configured through environment variables:
 
 | Variable                  | Default                | Description                                                                                          |
 |---------------------------|------------------------|------------------------------------------------------------------------------------------------------|
+| `TRACKER_PORT`            | `8080`                 | TCP port the server listens on.                                                                      |
 | `TRACKER_DB_PATH`         | `time-tracker.db`      | Path to the SQLite database file.                                                                    |
 | `TRACKER_JWT_SECRET`      | `dev-secret-change-me` | Secret for signing JWTs used by the (currently unused) bearer-token API flow. Set this in production. |
 | `TRACKER_SECURE_COOKIES`  | `true`                 | Mark cookies `Secure`, so browsers only send them over HTTPS. Set to `false` to serve plain HTTP.     |
@@ -119,8 +120,8 @@ assumes a TLS-terminating reverse proxy in front. Left on over plain HTTP, the
 browser accepts the session cookie and then never sends it back, so logging in
 appears to do nothing.
 
-The server always listens on port `8080`. The database path can also be passed
-with `--db-path`. Migrations are embedded in the binary and applied on startup;
+The database path can also be passed with `--db-path`, which takes precedence
+over the environment. Migrations are embedded in the binary and applied on startup;
 each one is recorded in a `schema_migrations` table so it runs exactly once.
 
 ## CLI

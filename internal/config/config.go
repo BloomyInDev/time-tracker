@@ -27,7 +27,7 @@ type Config struct {
 
 func Load() Config {
 	return Config{
-		Port:          8080,
+		Port:          getPort("TRACKER_PORT", 8080),
 		DBPath:        getEnv("TRACKER_DB_PATH", "time-tracker.db"),
 		JWTSecret:     getEnv("TRACKER_JWT_SECRET", "dev-secret-change-me"),
 		SQLiteWAL:     getBool("TRACKER_SQLITE_WAL", false),
@@ -40,6 +40,26 @@ func getEnv(key, fallback string) string {
 		return v
 	}
 	return fallback
+}
+
+// getPort reads a TCP port. Zero is rejected along with the out-of-range
+// values: asking the kernel to pick a free port is never what a server someone
+// has to reach was meant to do.
+func getPort(key string, fallback int) int {
+	raw := os.Getenv(key)
+	if raw == "" {
+		return fallback
+	}
+	parsed, err := strconv.Atoi(raw)
+	if err != nil {
+		log.Printf("%s: %q isn't a number, using %d", key, raw, fallback)
+		return fallback
+	}
+	if parsed < 1 || parsed > 65535 {
+		log.Printf("%s: %d isn't a valid port, using %d", key, parsed, fallback)
+		return fallback
+	}
+	return parsed
 }
 
 // getBool reads a boolean in any form strconv accepts ("1", "true", "off").

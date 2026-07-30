@@ -18,6 +18,11 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
+// cfg is read once for the whole process. Load reports malformed values as it
+// falls back to a default, and every command builds its flags at startup, so
+// reading it per command would print each of those warnings several times over.
+var cfg = config.Load()
+
 func main() {
 	cmd := &cli.Command{
 		Name:  "time-tracker",
@@ -40,13 +45,13 @@ func dbPathFlag() *cli.StringFlag {
 	return &cli.StringFlag{
 		Name:    "db-path",
 		Usage:   "path to the sqlite database file",
-		Value:   config.Load().DBPath,
+		Value:   cfg.DBPath,
 		Sources: cli.EnvVars("TRACKER_DB_PATH"),
 	}
 }
 
 func openDB(cmd *cli.Command) (*sql.DB, error) {
-	return db.Open(cmd.String("db-path"), db.Options{WAL: config.Load().SQLiteWAL})
+	return db.Open(cmd.String("db-path"), db.Options{WAL: cfg.SQLiteWAL})
 }
 
 func serveCommand() *cli.Command {
@@ -55,8 +60,6 @@ func serveCommand() *cli.Command {
 		Usage: "run the web server",
 		Flags: []cli.Flag{dbPathFlag()},
 		Action: func(ctx context.Context, cmd *cli.Command) error {
-			cfg := config.Load()
-
 			if err := i18n.Load(); err != nil {
 				return fmt.Errorf("load locales: %w", err)
 			}

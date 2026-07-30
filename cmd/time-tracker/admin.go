@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/bloomyindev/time-tracker/internal/config"
 	"github.com/bloomyindev/time-tracker/internal/db"
 	"github.com/bloomyindev/time-tracker/internal/service/auth"
 	"github.com/urfave/cli/v3"
@@ -28,7 +27,7 @@ func registerCommand() *cli.Command {
 			}
 			defer conn.Close()
 
-			svc := auth.NewService(conn, config.Load().JWTSecret)
+			svc := auth.NewService(conn, cfg.JWTSecret)
 			email := cmd.String("email")
 			if err := svc.Register(email, cmd.String("password")); err != nil {
 				return fmt.Errorf("register: %w", err)
