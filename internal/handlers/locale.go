@@ -6,10 +6,11 @@ import (
 
 	"github.com/bloomyindev/time-tracker/internal/i18n"
 	"github.com/bloomyindev/time-tracker/internal/redirect"
+	"github.com/go-chi/chi/v5"
 )
 
-func SetLocale(w http.ResponseWriter, r *http.Request) {
-	code := r.PathValue("code")
+func (h *Handlers) setLocale(w http.ResponseWriter, r *http.Request) {
+	code := chi.URLParam(r, "code")
 
 	valid := false
 	for _, l := range i18n.SupportedLocales {
@@ -29,6 +30,7 @@ func SetLocale(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 		MaxAge:   int((365 * 24 * time.Hour).Seconds()),
 		SameSite: http.SameSiteLaxMode,
+		Secure:   h.Config.SecureCookies,
 	})
 
 	dest := redirect.Sanitize(r.URL.Query().Get(redirect.Param), "/")

@@ -7,7 +7,16 @@ services:
       - "8080:8080"
     environment:
       # Set a strong secret in production.
-      JWT_SECRET: change-me
+      TRACKER_JWT_SECRET: change-me
+      # This file publishes port 8080 directly, so the app is reached over
+      # plain HTTP and the session cookie must not be marked Secure — the
+      # browser would accept it and then never send it back, and login would
+      # appear to do nothing. Drop this line the moment a TLS-terminating
+      # reverse proxy sits in front.
+      TRACKER_SECURE_COOKIES: "false"
+      # Write-ahead logging: readers and writers stop blocking each other, at
+      # the cost of two extra files next to the database.
+      # TRACKER_SQLITE_WAL: "true"
     volumes:
       - data:/data
     restart: unless-stopped

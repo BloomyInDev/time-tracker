@@ -9,6 +9,8 @@ tool (
 
 require (
 	github.com/a-h/templ v0.3.1020
+	github.com/bryanvaz/go-templ-lucide-icons v0.480.0
+	github.com/go-chi/chi/v5 v5.3.1
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/invopop/ctxi18n v0.9.0
 	github.com/urfave/cli/v3 v3.10.1
@@ -23,7 +25,6 @@ require (
 	github.com/andybalholm/brotli v1.2.0 // indirect
 	github.com/bep/godartsass/v2 v2.5.0 // indirect
 	github.com/bep/golibsass v1.2.0 // indirect
-	github.com/bryanvaz/go-templ-lucide-icons v0.480.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cli/browser v1.3.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect

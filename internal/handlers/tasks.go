@@ -8,47 +8,53 @@ import (
 
 	"github.com/bloomyindev/time-tracker/internal/db"
 	"github.com/bloomyindev/time-tracker/internal/models"
-	"github.com/bloomyindev/time-tracker/internal/service/auth"
 	"github.com/bloomyindev/time-tracker/internal/templates"
+	"github.com/go-chi/chi/v5"
 )
 
-func ListTasks(conn *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		userID, _ := auth.UserIDFromContext(r.Context())
+func (h *Handlers) TasksRouter() chi.Router {
+	r := chi.NewRouter()
+	r.Get("/", h.listTasks)
+	r.Post("/", h.createTask)
+	r.Get("/{id}/edit", h.editTaskForm)
+	r.Post("/{id}/update", h.updateTask)
+	r.Post("/{id}/delete", h.deleteTask)
+	return r
+}
 
-		tasks, err := db.ListTasks(conn, userID)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		clients, err := db.ListClientsOrderedByName(conn, userID)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		types, err := db.ListTaskTypes(conn, userID)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		periods, err := db.ListPeriods(conn, userID)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		byClient, err := db.ListTaskTypesByClient(conn, userID)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		var defaultPeriodID int64
-		if p, err := db.GetDefaultPeriod(conn, userID); err == nil {
-			defaultPeriodID = p.ID
-		}
-
-		templates.Tasks(clients, types, periods, byClient, groupByDay(tasks), time.Now().Format("2006-01-02"), defaultPeriodID).Render(r.Context(), w)
+func (h *Handlers) listTasks(w http.ResponseWriter, r *http.Request) {
+	tasks, err := db.ListTasks(h.DB, userID(r))
+	if err != nil {
+		fail(w, err)
+		return
 	}
+	clients, err := db.ListClientsOrderedByName(h.DB, userID(r))
+	if err != nil {
+		fail(w, err)
+		return
+	}
+	types, err := db.ListTaskTypes(h.DB, userID(r))
+	if err != nil {
+		fail(w, err)
+		return
+	}
+	periods, err := db.ListPeriods(h.DB, userID(r))
+	if err != nil {
+		fail(w, err)
+		return
+	}
+	byClient, err := db.ListTaskTypesByClient(h.DB, userID(r))
+	if err != nil {
+		fail(w, err)
+		return
+	}
+
+	var defaultPeriodID int64
+	if p, err := db.GetDefaultPeriod(h.DB, userID(r)); err == nil {
+		defaultPeriodID = p.ID
+	}
+
+	templates.Tasks(clients, types, periods, byClient, groupByDay(tasks), time.Now().Format("2006-01-02"), defaultPeriodID).Render(r.Context(), w)
 }
 
 // parsePeriodID reads an optional period_id form value; a blank or
@@ -113,41 +119,142 @@ func taskTypeAllowedForClient(conn *sql.DB, clientID, taskTypeID int64) (bool, e
 	return false, nil
 }
 
-func CreateTask(conn *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		userID, _ := auth.UserIDFromContext(r.Context())
-		if err := r.ParseForm(); err != nil {
-			http.Error(w, "bad request", http.StatusBadRequest)
-			return
-		}
+// taskForm holds the fields shared by the create and update forms.
+type taskForm struct {
+	clientID   int64
+	taskTypeID int64
+	periodID   int64
+	title      string
+	hoursSpent float64
+	date       time.Time
+}
 
-		clientID, err := strconv.ParseInt(r.FormValue("client_id"), 10, 64)
-		if err != nil {
-			http.Error(w, "invalid client_id", http.StatusBadRequest)
-			return
-		}
-		taskTypeID, err := strconv.ParseInt(r.FormValue("task_type_id"), 10, 64)
-		if err != nil {
-			http.Error(w, "invalid task_type_id", http.StatusBadRequest)
-			return
-		}
-		hoursSpent, err := strconv.ParseFloat(r.FormValue("hours_spent"), 64)
-		if err != nil {
-			http.Error(w, "invalid hours_spent", http.StatusBadRequest)
-			return
-		}
-		date, err := time.Parse("2006-01-02", r.FormValue("date"))
-		if err != nil {
-			http.Error(w, "invalid date", http.StatusBadRequest)
-			return
-		}
-		periodID, err := parsePeriodID(r)
-		if err != nil {
-			http.Error(w, "invalid period_id", http.StatusBadRequest)
-			return
-		}
+// parseTaskForm reads and validates the task form, writing its own 400
+// and reporting false on the first bad field.
+func parseTaskForm(w http.ResponseWriter, r *http.Request) (taskForm, bool) {
+	if !parseForm(w, r) {
+		return taskForm{}, false
+	}
 
-		active, err := clientAcceptsTasks(conn, userID, clientID)
+	var f taskForm
+	var err error
+	if f.clientID, err = strconv.ParseInt(r.FormValue("client_id"), 10, 64); err != nil {
+		http.Error(w, "invalid client_id", http.StatusBadRequest)
+		return taskForm{}, false
+	}
+	if f.taskTypeID, err = strconv.ParseInt(r.FormValue("task_type_id"), 10, 64); err != nil {
+		http.Error(w, "invalid task_type_id", http.StatusBadRequest)
+		return taskForm{}, false
+	}
+	if f.hoursSpent, err = strconv.ParseFloat(r.FormValue("hours_spent"), 64); err != nil {
+		http.Error(w, "invalid hours_spent", http.StatusBadRequest)
+		return taskForm{}, false
+	}
+	if f.date, err = time.Parse("2006-01-02", r.FormValue("date")); err != nil {
+		http.Error(w, "invalid date", http.StatusBadRequest)
+		return taskForm{}, false
+	}
+	if f.periodID, err = parsePeriodID(r); err != nil {
+		http.Error(w, "invalid period_id", http.StatusBadRequest)
+		return taskForm{}, false
+	}
+	f.title = r.FormValue("title")
+	return f, true
+}
+
+func (h *Handlers) createTask(w http.ResponseWriter, r *http.Request) {
+	f, ok := parseTaskForm(w, r)
+	if !ok {
+		return
+	}
+
+	active, err := clientAcceptsTasks(h.DB, userID(r), f.clientID)
+	if err != nil {
+		http.Error(w, "client not found", http.StatusBadRequest)
+		return
+	}
+	if !active {
+		http.Error(w, "client is archived", http.StatusBadRequest)
+		return
+	}
+
+	allowed, err := taskTypeAllowedForClient(h.DB, f.clientID, f.taskTypeID)
+	if err != nil {
+		fail(w, err)
+		return
+	}
+	if !allowed {
+		http.Error(w, "task type not allowed for this client", http.StatusBadRequest)
+		return
+	}
+
+	_, err = db.CreateTask(h.DB, models.Task{
+		UserID:     userID(r),
+		ClientID:   f.clientID,
+		TaskTypeID: f.taskTypeID,
+		PeriodID:   f.periodID,
+		Title:      f.title,
+		HoursSpent: f.hoursSpent,
+		Date:       f.date,
+	})
+	if err != nil {
+		fail(w, err)
+		return
+	}
+	http.Redirect(w, r, "/tasks", http.StatusSeeOther)
+}
+
+func (h *Handlers) editTaskForm(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(w, r)
+	if !ok {
+		return
+	}
+
+	task, err := db.GetTask(h.DB, userID(r), id)
+	if err != nil {
+		http.Error(w, "task not found", http.StatusNotFound)
+		return
+	}
+	clients, err := db.ListClients(h.DB, userID(r))
+	if err != nil {
+		fail(w, err)
+		return
+	}
+	types, err := db.ListTaskTypes(h.DB, userID(r))
+	if err != nil {
+		fail(w, err)
+		return
+	}
+	periods, err := db.ListPeriods(h.DB, userID(r))
+	if err != nil {
+		fail(w, err)
+		return
+	}
+
+	templates.EditTask(task, clients, types, periods).Render(r.Context(), w)
+}
+
+func (h *Handlers) updateTask(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(w, r)
+	if !ok {
+		return
+	}
+	existing, err := db.GetTask(h.DB, userID(r), id)
+	if err != nil {
+		http.Error(w, "task not found", http.StatusNotFound)
+		return
+	}
+
+	f, ok := parseTaskForm(w, r)
+	if !ok {
+		return
+	}
+
+	// Moving a task onto an archived client is a new assignment, so
+	// it's refused; a task already on an archived client stays
+	// editable.
+	if f.clientID != existing.ClientID {
+		active, err := clientAcceptsTasks(h.DB, userID(r), f.clientID)
 		if err != nil {
 			http.Error(w, "client not found", http.StatusBadRequest)
 			return
@@ -156,171 +263,46 @@ func CreateTask(conn *sql.DB) http.HandlerFunc {
 			http.Error(w, "client is archived", http.StatusBadRequest)
 			return
 		}
-
-		ok, err := taskTypeAllowedForClient(conn, clientID, taskTypeID)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		if !ok {
-			http.Error(w, "task type not allowed for this client", http.StatusBadRequest)
-			return
-		}
-
-		_, err = db.CreateTask(conn, models.Task{
-			UserID:     userID,
-			ClientID:   clientID,
-			TaskTypeID: taskTypeID,
-			PeriodID:   periodID,
-			Title:      r.FormValue("title"),
-			HoursSpent: hoursSpent,
-			Date:       date,
-		})
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		http.Redirect(w, r, "/tasks", http.StatusSeeOther)
 	}
+
+	allowed, err := taskTypeAllowedForClient(h.DB, f.clientID, f.taskTypeID)
+	if err != nil {
+		fail(w, err)
+		return
+	}
+	if !allowed {
+		http.Error(w, "task type not allowed for this client", http.StatusBadRequest)
+		return
+	}
+
+	err = db.UpdateTask(h.DB, models.Task{
+		ID:         id,
+		UserID:     userID(r),
+		ClientID:   f.clientID,
+		TaskTypeID: f.taskTypeID,
+		PeriodID:   f.periodID,
+		Title:      f.title,
+		HoursSpent: f.hoursSpent,
+		Date:       f.date,
+	})
+	if err != nil {
+		fail(w, err)
+		return
+	}
+	// Anchor the reload on the edited row so the browser restores the
+	// scroll position instead of jumping to the top of the list.
+	http.Redirect(w, r, "/tasks#task-"+strconv.FormatInt(id, 10), http.StatusSeeOther)
 }
 
-func EditTaskForm(conn *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		userID, _ := auth.UserIDFromContext(r.Context())
-		id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-		if err != nil {
-			http.Error(w, "invalid id", http.StatusBadRequest)
-			return
-		}
-
-		task, err := db.GetTask(conn, userID, id)
-		if err != nil {
-			http.Error(w, "task not found", http.StatusNotFound)
-			return
-		}
-		clients, err := db.ListClients(conn, userID)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		types, err := db.ListTaskTypes(conn, userID)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		periods, err := db.ListPeriods(conn, userID)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		templates.EditTask(task, clients, types, periods).Render(r.Context(), w)
+func (h *Handlers) deleteTask(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(w, r)
+	if !ok {
+		return
 	}
-}
 
-func UpdateTask(conn *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		userID, _ := auth.UserIDFromContext(r.Context())
-		id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-		if err != nil {
-			http.Error(w, "invalid id", http.StatusBadRequest)
-			return
-		}
-		existing, err := db.GetTask(conn, userID, id)
-		if err != nil {
-			http.Error(w, "task not found", http.StatusNotFound)
-			return
-		}
-
-		if err := r.ParseForm(); err != nil {
-			http.Error(w, "bad request", http.StatusBadRequest)
-			return
-		}
-
-		clientID, err := strconv.ParseInt(r.FormValue("client_id"), 10, 64)
-		if err != nil {
-			http.Error(w, "invalid client_id", http.StatusBadRequest)
-			return
-		}
-		taskTypeID, err := strconv.ParseInt(r.FormValue("task_type_id"), 10, 64)
-		if err != nil {
-			http.Error(w, "invalid task_type_id", http.StatusBadRequest)
-			return
-		}
-		hoursSpent, err := strconv.ParseFloat(r.FormValue("hours_spent"), 64)
-		if err != nil {
-			http.Error(w, "invalid hours_spent", http.StatusBadRequest)
-			return
-		}
-		date, err := time.Parse("2006-01-02", r.FormValue("date"))
-		if err != nil {
-			http.Error(w, "invalid date", http.StatusBadRequest)
-			return
-		}
-		periodID, err := parsePeriodID(r)
-		if err != nil {
-			http.Error(w, "invalid period_id", http.StatusBadRequest)
-			return
-		}
-
-		// Moving a task onto an archived client is a new assignment, so
-		// it's refused; a task already on an archived client stays
-		// editable.
-		if clientID != existing.ClientID {
-			active, err := clientAcceptsTasks(conn, userID, clientID)
-			if err != nil {
-				http.Error(w, "client not found", http.StatusBadRequest)
-				return
-			}
-			if !active {
-				http.Error(w, "client is archived", http.StatusBadRequest)
-				return
-			}
-		}
-
-		ok, err := taskTypeAllowedForClient(conn, clientID, taskTypeID)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		if !ok {
-			http.Error(w, "task type not allowed for this client", http.StatusBadRequest)
-			return
-		}
-
-		err = db.UpdateTask(conn, models.Task{
-			ID:         id,
-			UserID:     userID,
-			ClientID:   clientID,
-			TaskTypeID: taskTypeID,
-			PeriodID:   periodID,
-			Title:      r.FormValue("title"),
-			HoursSpent: hoursSpent,
-			Date:       date,
-		})
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		// Anchor the reload on the edited row so the browser restores the
-		// scroll position instead of jumping to the top of the list.
-		http.Redirect(w, r, "/tasks#task-"+strconv.FormatInt(id, 10), http.StatusSeeOther)
+	if err := db.DeleteTask(h.DB, userID(r), id); err != nil {
+		fail(w, err)
+		return
 	}
-}
-
-func DeleteTask(conn *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		userID, _ := auth.UserIDFromContext(r.Context())
-		id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-		if err != nil {
-			http.Error(w, "invalid id", http.StatusBadRequest)
-			return
-		}
-
-		if err := db.DeleteTask(conn, userID, id); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		http.Redirect(w, r, "/tasks", http.StatusSeeOther)
-	}
+	http.Redirect(w, r, "/tasks", http.StatusSeeOther)
 }

@@ -6,9 +6,16 @@ import (
 	"time"
 
 	"github.com/bloomyindev/time-tracker/internal/db"
-	"github.com/bloomyindev/time-tracker/internal/service/auth"
 	"github.com/bloomyindev/time-tracker/internal/templates"
+	"github.com/go-chi/chi/v5"
 )
+
+func (h *Handlers) TimeRouter() chi.Router {
+	r := chi.NewRouter()
+	r.Get("/", h.listTimeEntries)
+	r.Get("/report", h.timeReport)
+	return r
+}
 
 // weekdayIndex maps a date to models.User.DailyHours order (0 = Monday
 // .. 6 = Sunday). Go's time.Weekday has Sunday = 0, so shift by 6.
@@ -105,33 +112,27 @@ func buildTimeView(conn *sql.DB, userID int64, from, to string) (templates.TimeV
 	return view, nil
 }
 
-// ListTimeEntries shows one row per day with the total hours logged that
+// listTimeEntries shows one row per day with the total hours logged that
 // day, grouped by month, plus an optional date-to-date range filter.
-func ListTimeEntries(conn *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		userID, _ := auth.UserIDFromContext(r.Context())
-		view, err := buildTimeView(conn, userID, r.URL.Query().Get("from"), r.URL.Query().Get("to"))
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		templates.TimeEntries(view).Render(r.Context(), w)
+func (h *Handlers) listTimeEntries(w http.ResponseWriter, r *http.Request) {
+	view, err := buildTimeView(h.DB, userID(r), r.URL.Query().Get("from"), r.URL.Query().Get("to"))
+	if err != nil {
+		fail(w, err)
+		return
 	}
+	templates.TimeEntries(view).Render(r.Context(), w)
 }
 
-// TimeReport renders a print-friendly, standalone page of the same breakdown
+// timeReport renders a print-friendly, standalone page of the same breakdown
 // (no navbar) so the browser's print dialog can save it as a PDF.
-func TimeReport(conn *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		userID, _ := auth.UserIDFromContext(r.Context())
-		view, err := buildTimeView(conn, userID, r.URL.Query().Get("from"), r.URL.Query().Get("to"))
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		// By default the report lists only days off target; all=1 keeps
-		// the days that hit their target exactly.
-		includeOnTarget := r.URL.Query().Get("all") == "1"
-		templates.TimeReport(view, includeOnTarget).Render(r.Context(), w)
+func (h *Handlers) timeReport(w http.ResponseWriter, r *http.Request) {
+	view, err := buildTimeView(h.DB, userID(r), r.URL.Query().Get("from"), r.URL.Query().Get("to"))
+	if err != nil {
+		fail(w, err)
+		return
 	}
+	// By default the report lists only days off target; all=1 keeps
+	// the days that hit their target exactly.
+	includeOnTarget := r.URL.Query().Get("all") == "1"
+	templates.TimeReport(view, includeOnTarget).Render(r.Context(), w)
 }

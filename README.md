@@ -46,13 +46,14 @@ version tags, for `linux/amd64`, `linux/arm64`, `linux/arm/v7`, `linux/arm/v6`,
 
 ```sh
 docker run -d -p 8080:8080 \
-  -e JWT_SECRET=change-me \
+  -e TRACKER_JWT_SECRET=change-me \
+  -e TRACKER_SECURE_COOKIES=false \
   -v time-tracker-data:/data \
   ghcr.io/bloomyindev/time-tracker:latest
 ```
 
 The container runs `time-tracker serve` by default. The database is stored in
-the `/data` volume (`DB_PATH=/data/time-tracker.db`). Run admin commands inside
+the `/data` volume (`TRACKER_DB_PATH=/data/time-tracker.db`). Run admin commands inside
 the container with `docker exec <container> /app/time-tracker <command>` (see
 [CLI](#cli)).
 
@@ -82,7 +83,7 @@ archive contains the single `time-tracker` binary. Prebuilt targets:
 ```sh
 tar -xzf time-tracker_*_linux_amd64.tar.gz
 cd time-tracker_*_linux_amd64
-JWT_SECRET=change-me ./time-tracker serve
+TRACKER_JWT_SECRET=change-me TRACKER_SECURE_COOKIES=false ./time-tracker serve
 ```
 
 ### From source
@@ -93,7 +94,7 @@ Building from source requires Go 1.26 or later. See
 ## First run
 
 1. **Start the server.** It listens on <http://localhost:8080>. In production,
-   always set `JWT_SECRET` (see [Configuration](#configuration)).
+   always set `TRACKER_JWT_SECRET` (see [Configuration](#configuration)).
 2. **Create a user.** There is no public sign-up:
    ```sh
    ./time-tracker register --email you@example.com --password secret
@@ -106,13 +107,22 @@ Building from source requires Go 1.26 or later. See
 
 The app is configured through environment variables:
 
-| Variable     | Default                | Description                                                                                 |
-|--------------|------------------------|---------------------------------------------------------------------------------------------|
-| `DB_PATH`    | `time-tracker.db`      | Path to the SQLite database file.                                                           |
-| `JWT_SECRET` | `dev-secret-change-me` | Secret for signing JWTs used by the (currently unused) bearer-token API flow. Set this in production. |
+| Variable                  | Default                | Description                                                                                          |
+|---------------------------|------------------------|------------------------------------------------------------------------------------------------------|
+| `TRACKER_PORT`            | `8080`                 | TCP port the server listens on.                                                                      |
+| `TRACKER_DB_PATH`         | `time-tracker.db`      | Path to the SQLite database file.                                                                    |
+| `TRACKER_JWT_SECRET`      | `dev-secret-change-me` | Secret for signing JWTs used by the (currently unused) bearer-token API flow. Set this in production. |
+| `TRACKER_SECURE_COOKIES`  | `true`                 | Mark cookies `Secure`, so browsers only send them over HTTPS. Set to `false` to serve plain HTTP.     |
+| `TRACKER_SQLITE_WAL`      | `false`                | Enable SQLite write-ahead logging. Adds `-wal` and `-shm` files next to the database.                 |
 
-The server always listens on port `8080`. The database path can also be passed
-with `--db-path`. The schema is created and migrated automatically on startup.
+**Serving over plain HTTP?** Set `TRACKER_SECURE_COOKIES=false`. The default
+assumes a TLS-terminating reverse proxy in front. Left on over plain HTTP, the
+browser accepts the session cookie and then never sends it back, so logging in
+appears to do nothing.
+
+The database path can also be passed with `--db-path`, which takes precedence
+over the environment. Migrations are embedded in the binary and applied on startup;
+each one is recorded in a `schema_migrations` table so it runs exactly once.
 
 ## CLI
 
@@ -124,7 +134,7 @@ time-tracker register --email <email> --password <password>  # create a user
 time-tracker export-users                                    # dump users as JSON (no password hashes)
 ```
 
-Every command accepts `--db-path` (or the `DB_PATH` environment variable).
+Every command accepts `--db-path` (or the `TRACKER_DB_PATH` environment variable).
 
 ## Contributing
 

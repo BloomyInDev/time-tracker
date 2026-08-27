@@ -23,7 +23,7 @@ WORKDIR /app
 COPY --from=build /out/time-tracker /app/
 
 EXPOSE 8080
-ENV DB_PATH=/data/time-tracker.db
+ENV TRACKER_DB_PATH=/data/time-tracker.db
 VOLUME ["/data"]
 
 ENTRYPOINT ["/app/time-tracker"]

@@ -2,41 +2,47 @@ package handlers
 
 import (
 	"database/sql"
+	"errors"
 	"net/http"
 	"strconv"
 
 	"github.com/bloomyindev/time-tracker/internal/db"
 	"github.com/bloomyindev/time-tracker/internal/models"
-	"github.com/bloomyindev/time-tracker/internal/service/auth"
 	"github.com/bloomyindev/time-tracker/internal/templates"
+	"github.com/go-chi/chi/v5"
 )
 
-func ListClients(conn *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		userID, _ := auth.UserIDFromContext(r.Context())
-		clients, err := db.ListClientsOrderedByName(conn, userID)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		templates.Clients(clients).Render(r.Context(), w)
-	}
+func (h *Handlers) ClientsRouter() chi.Router {
+	r := chi.NewRouter()
+	r.Get("/", h.listClients)
+	r.Post("/", h.createClient)
+	r.Get("/{id}", h.clientDetail)
+	r.Get("/{id}/report", h.clientReport)
+	r.Get("/{id}/edit", h.editClientForm)
+	r.Post("/{id}/edit", h.updateClient)
+	r.Post("/{id}/delete", h.deleteClient)
+	return r
 }
 
-func CreateClient(conn *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		userID, _ := auth.UserIDFromContext(r.Context())
-		if err := r.ParseForm(); err != nil {
-			http.Error(w, "bad request", http.StatusBadRequest)
-			return
-		}
-
-		if _, err := db.CreateClient(conn, userID, r.FormValue("name")); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		http.Redirect(w, r, "/clients", http.StatusSeeOther)
+func (h *Handlers) listClients(w http.ResponseWriter, r *http.Request) {
+	clients, err := db.ListClientsOrderedByName(h.DB, userID(r))
+	if err != nil {
+		fail(w, err)
+		return
 	}
+	templates.Clients(clients).Render(r.Context(), w)
+}
+
+func (h *Handlers) createClient(w http.ResponseWriter, r *http.Request) {
+	if !parseForm(w, r) {
+		return
+	}
+
+	if _, err := db.CreateClient(h.DB, userID(r), r.FormValue("name")); err != nil {
+		fail(w, err)
+		return
+	}
+	http.Redirect(w, r, "/clients", http.StatusSeeOther)
 }
 
 // taskTypeChoices lists the user's task types, each flagged with whether
@@ -62,59 +68,50 @@ func taskTypeChoices(conn *sql.DB, userID, clientID int64) ([]templates.TaskType
 	return choices, nil
 }
 
-// EditClientForm renders the single page that edits everything about a
+// editClientForm renders the single page that edits everything about a
 // client: its name, its archived state and its allowed task types.
-func EditClientForm(conn *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		userID, _ := auth.UserIDFromContext(r.Context())
-		id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-		if err != nil {
-			http.Error(w, "invalid id", http.StatusBadRequest)
-			return
-		}
-		client, err := db.GetClient(conn, userID, id)
-		if err != nil {
-			http.Error(w, "client not found", http.StatusNotFound)
-			return
-		}
-		choices, err := taskTypeChoices(conn, userID, id)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		templates.EditClient(client, choices).Render(r.Context(), w)
+func (h *Handlers) editClientForm(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(w, r)
+	if !ok {
+		return
 	}
+	client, err := db.GetClient(h.DB, userID(r), id)
+	if err != nil {
+		http.Error(w, "client not found", http.StatusNotFound)
+		return
+	}
+	choices, err := taskTypeChoices(h.DB, userID(r), id)
+	if err != nil {
+		fail(w, err)
+		return
+	}
+	templates.EditClient(client, choices).Render(r.Context(), w)
 }
 
-// UpdateClient saves the whole edit form: name, archived flag and the
+// updateClient saves the whole edit form: name, archived flag and the
 // client's allowed task types.
-func UpdateClient(conn *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		userID, _ := auth.UserIDFromContext(r.Context())
-		id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-		if err != nil {
-			http.Error(w, "invalid id", http.StatusBadRequest)
-			return
-		}
-		if _, err := db.GetClient(conn, userID, id); err != nil {
-			http.Error(w, "client not found", http.StatusNotFound)
-			return
-		}
-		if err := r.ParseForm(); err != nil {
-			http.Error(w, "bad request", http.StatusBadRequest)
-			return
-		}
-
-		if err := db.UpdateClient(conn, userID, id, r.FormValue("name"), r.FormValue("is_archived") == "1"); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		if err := syncClientTaskTypes(conn, userID, id, r.Form["task_type_id"]); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		http.Redirect(w, r, "/clients", http.StatusSeeOther)
+func (h *Handlers) updateClient(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(w, r)
+	if !ok {
+		return
 	}
+	if _, err := db.GetClient(h.DB, userID(r), id); err != nil {
+		http.Error(w, "client not found", http.StatusNotFound)
+		return
+	}
+	if !parseForm(w, r) {
+		return
+	}
+
+	if err := db.UpdateClient(h.DB, userID(r), id, r.FormValue("name"), r.FormValue("is_archived") == "1"); err != nil {
+		fail(w, err)
+		return
+	}
+	if err := syncClientTaskTypes(h.DB, userID(r), id, r.Form["task_type_id"]); err != nil {
+		fail(w, err)
+		return
+	}
+	http.Redirect(w, r, "/clients", http.StatusSeeOther)
 }
 
 // syncClientTaskTypes assigns exactly the checked task types to the
@@ -146,81 +143,72 @@ func syncClientTaskTypes(conn *sql.DB, userID, clientID int64, checkedIDs []stri
 	return nil
 }
 
-func DeleteClient(conn *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		userID, _ := auth.UserIDFromContext(r.Context())
-		id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-		if err != nil {
-			http.Error(w, "invalid id", http.StatusBadRequest)
-			return
-		}
-
-		if err := db.DeleteClient(conn, userID, id); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		http.Redirect(w, r, "/clients", http.StatusSeeOther)
+func (h *Handlers) deleteClient(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(w, r)
+	if !ok {
+		return
 	}
+
+	err := db.DeleteClient(h.DB, userID(r), id)
+	if errors.Is(err, db.ErrInUse) {
+		http.Error(w, "client still has tasks; archive it instead", http.StatusConflict)
+		return
+	}
+	if err != nil {
+		fail(w, err)
+		return
+	}
+	http.Redirect(w, r, "/clients", http.StatusSeeOther)
 }
 
-func ClientDetail(conn *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		userID, _ := auth.UserIDFromContext(r.Context())
-		id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-		if err != nil {
-			http.Error(w, "invalid id", http.StatusBadRequest)
-			return
-		}
-
-		client, err := db.GetClient(conn, userID, id)
-		if err != nil {
-			http.Error(w, "client not found", http.StatusNotFound)
-			return
-		}
-
-		allTypes, err := db.ListTaskTypes(conn, userID)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		periods, err := db.ListPeriods(conn, userID)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		var selectedPeriodID int64
-		if raw := r.URL.Query().Get("period_id"); raw != "" {
-			selectedPeriodID, err = strconv.ParseInt(raw, 10, 64)
-			if err != nil {
-				http.Error(w, "invalid period_id", http.StatusBadRequest)
-				return
-			}
-		}
-		var selectedTaskTypeID int64
-		if raw := r.URL.Query().Get("task_type_id"); raw != "" {
-			selectedTaskTypeID, err = strconv.ParseInt(raw, 10, 64)
-			if err != nil {
-				http.Error(w, "invalid task_type_id", http.StatusBadRequest)
-				return
-			}
-		}
-
-		tasks, err := db.ListTasksByClientFiltered(conn, userID, id, selectedPeriodID, selectedTaskTypeID)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		var totalHours float64
-		hoursByType := make(map[int64]float64)
-		for _, t := range tasks {
-			totalHours += t.HoursSpent
-			hoursByType[t.TaskTypeID] += t.HoursSpent
-		}
-
-		templates.ClientDetail(client, tasks, totalHours, hoursByType, allTypes, periods, selectedPeriodID, selectedTaskTypeID).Render(r.Context(), w)
+func (h *Handlers) clientDetail(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(w, r)
+	if !ok {
+		return
 	}
+
+	client, err := db.GetClient(h.DB, userID(r), id)
+	if err != nil {
+		http.Error(w, "client not found", http.StatusNotFound)
+		return
+	}
+
+	allTypes, err := db.ListTaskTypes(h.DB, userID(r))
+	if err != nil {
+		fail(w, err)
+		return
+	}
+
+	periods, err := db.ListPeriods(h.DB, userID(r))
+	if err != nil {
+		fail(w, err)
+		return
+	}
+
+	selectedPeriodID, err := clientFilterID(r, "period_id")
+	if err != nil {
+		http.Error(w, "invalid period_id", http.StatusBadRequest)
+		return
+	}
+	selectedTaskTypeID, err := clientFilterID(r, "task_type_id")
+	if err != nil {
+		http.Error(w, "invalid task_type_id", http.StatusBadRequest)
+		return
+	}
+
+	tasks, err := db.ListTasksByClientFiltered(h.DB, userID(r), id, selectedPeriodID, selectedTaskTypeID)
+	if err != nil {
+		fail(w, err)
+		return
+	}
+	var totalHours float64
+	hoursByType := make(map[int64]float64)
+	for _, t := range tasks {
+		totalHours += t.HoursSpent
+		hoursByType[t.TaskTypeID] += t.HoursSpent
+	}
+
+	templates.ClientDetail(client, tasks, totalHours, hoursByType, allTypes, periods, selectedPeriodID, selectedTaskTypeID).Render(r.Context(), w)
 }
 
 // clientFilterID reads an optional int64 query param; a blank value means
@@ -233,92 +221,88 @@ func clientFilterID(r *http.Request, key string) (int64, error) {
 	return strconv.ParseInt(raw, 10, 64)
 }
 
-// ClientReport renders a print-friendly page for a client: the total hours on
+// clientReport renders a print-friendly page for a client: the total hours on
 // top, then one table per task type ("project"), honoring the active
 // period/task-type filters.
-func ClientReport(conn *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		userID, _ := auth.UserIDFromContext(r.Context())
-		id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-		if err != nil {
-			http.Error(w, "invalid id", http.StatusBadRequest)
-			return
-		}
-		client, err := db.GetClient(conn, userID, id)
-		if err != nil {
-			http.Error(w, "client not found", http.StatusNotFound)
-			return
-		}
-
-		periodID, err := clientFilterID(r, "period_id")
-		if err != nil {
-			http.Error(w, "invalid period_id", http.StatusBadRequest)
-			return
-		}
-		taskTypeID, err := clientFilterID(r, "task_type_id")
-		if err != nil {
-			http.Error(w, "invalid task_type_id", http.StatusBadRequest)
-			return
-		}
-
-		tasks, err := db.ListTasksByClientFiltered(conn, userID, id, periodID, taskTypeID)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		allTypes, err := db.ListTaskTypes(conn, userID)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		periods, err := db.ListPeriods(conn, userID)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		// One table per task type, in the app's task-type order, keeping
-		// only types that actually have tasks in the filtered set.
-		var total float64
-		tasksByType := make(map[int64][]models.Task)
-		for _, t := range tasks {
-			total += t.HoursSpent
-			tasksByType[t.TaskTypeID] = append(tasksByType[t.TaskTypeID], t)
-		}
-		var groups []templates.ClientTypeGroup
-		for _, tt := range allTypes {
-			ts, ok := tasksByType[tt.ID]
-			if !ok {
-				continue
-			}
-			var h float64
-			for _, t := range ts {
-				h += t.HoursSpent
-			}
-			groups = append(groups, templates.ClientTypeGroup{Name: tt.Name, Tasks: ts, Hours: h})
-		}
-
-		var periodLabel string
-		for _, p := range periods {
-			if p.ID == periodID {
-				periodLabel = p.Name
-			}
-		}
-		var taskTypeLabel string
-		for _, tt := range allTypes {
-			if tt.ID == taskTypeID {
-				taskTypeLabel = tt.Name
-			}
-		}
-
-		view := templates.ClientReportView{
-			ClientName:   client.Name,
-			PeriodName:   periodLabel,
-			TaskTypeName: taskTypeLabel,
-			Total:        total,
-			Groups:       groups,
-			Periods:      periods,
-		}
-		templates.ClientReport(view).Render(r.Context(), w)
+func (h *Handlers) clientReport(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(w, r)
+	if !ok {
+		return
 	}
+	client, err := db.GetClient(h.DB, userID(r), id)
+	if err != nil {
+		http.Error(w, "client not found", http.StatusNotFound)
+		return
+	}
+
+	periodID, err := clientFilterID(r, "period_id")
+	if err != nil {
+		http.Error(w, "invalid period_id", http.StatusBadRequest)
+		return
+	}
+	taskTypeID, err := clientFilterID(r, "task_type_id")
+	if err != nil {
+		http.Error(w, "invalid task_type_id", http.StatusBadRequest)
+		return
+	}
+
+	tasks, err := db.ListTasksByClientFiltered(h.DB, userID(r), id, periodID, taskTypeID)
+	if err != nil {
+		fail(w, err)
+		return
+	}
+	allTypes, err := db.ListTaskTypes(h.DB, userID(r))
+	if err != nil {
+		fail(w, err)
+		return
+	}
+	periods, err := db.ListPeriods(h.DB, userID(r))
+	if err != nil {
+		fail(w, err)
+		return
+	}
+
+	// One table per task type, in the app's task-type order, keeping
+	// only types that actually have tasks in the filtered set.
+	var total float64
+	tasksByType := make(map[int64][]models.Task)
+	for _, t := range tasks {
+		total += t.HoursSpent
+		tasksByType[t.TaskTypeID] = append(tasksByType[t.TaskTypeID], t)
+	}
+	var groups []templates.ClientTypeGroup
+	for _, tt := range allTypes {
+		ts, ok := tasksByType[tt.ID]
+		if !ok {
+			continue
+		}
+		var hrs float64
+		for _, t := range ts {
+			hrs += t.HoursSpent
+		}
+		groups = append(groups, templates.ClientTypeGroup{Name: tt.Name, Tasks: ts, Hours: hrs})
+	}
+
+	var periodLabel string
+	for _, p := range periods {
+		if p.ID == periodID {
+			periodLabel = p.Name
+		}
+	}
+	var taskTypeLabel string
+	for _, tt := range allTypes {
+		if tt.ID == taskTypeID {
+			taskTypeLabel = tt.Name
+		}
+	}
+
+	view := templates.ClientReportView{
+		ClientName:   client.Name,
+		PeriodName:   periodLabel,
+		TaskTypeName: taskTypeLabel,
+		Total:        total,
+		Groups:       groups,
+		Periods:      periods,
+	}
+	templates.ClientReport(view).Render(r.Context(), w)
 }

@@ -48,7 +48,12 @@ func UpdateTaskType(conn *sql.DB, userID, id int64, name string) error {
 	return err
 }
 
+// DeleteTaskType removes a task type. It returns ErrInUse when tasks still
+// carry it; the client assignments referencing it cascade away.
 func DeleteTaskType(conn *sql.DB, userID, id int64) error {
 	_, err := conn.Exec(`DELETE FROM task_types WHERE id = ? AND user_id = ?`, id, userID)
+	if isForeignKeyErr(err) {
+		return ErrInUse
+	}
 	return err
 }
