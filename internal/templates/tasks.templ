@@ -13,7 +13,7 @@ type DayGroup struct {
 	Future bool
 }
 
-templ Tasks(clients []models.Client, types []models.TaskType, periods []models.Period, byClient map[int64][]int64, days []DayGroup, today string, defaultPeriodID int64) {
+templ Tasks(clients []models.Client, types []models.TaskType, initialTypes []models.TaskType, periods []models.Period, byClient map[int64][]int64, days []DayGroup, today string, defaultPeriodID int64) {
 	@Layout(i18n.T(ctx, "tasks.title")) {
 		<section class="section">
 			<div class="container">
@@ -43,11 +43,19 @@ templ Tasks(clients []models.Client, types []models.TaskType, periods []models.P
 						<div class="control">
 							<div class="select">
 								<select name="task_type_id" id="task-type-select">
-									for _, t := range types {
+									for _, t := range initialTypes {
 										<option value={ itoa(t.ID) }>{ t.Name }</option>
 									}
 								</select>
 							</div>
+							// The select above is already narrowed to the
+							// preselected client; task-filter.js re-derives
+							// it from this full list when the client changes.
+							<template id="task-type-options">
+								for _, t := range types {
+									<option value={ itoa(t.ID) }>{ t.Name }</option>
+								}
+							</template>
 						</div>
 						if len(periods) > 0 {
 							<div class="control">
@@ -129,12 +137,20 @@ templ Tasks(clients []models.Client, types []models.TaskType, periods []models.P
 	}
 }
 
-templ EditTask(task models.Task, clients []models.Client, types []models.TaskType, periods []models.Period) {
+templ EditTask(task models.Task, clients []models.Client, types []models.TaskType, periods []models.Period, byClient map[int64][]int64) {
 	@Layout(i18n.T(ctx, "tasks.edit_title")) {
 		<section class="section">
 			<div class="container">
 				<h1 class="title">{ i18n.T(ctx, "tasks.edit_title") }</h1>
-				<form method="post" action={ templ.URL("/tasks/" + itoa(task.ID) + "/update") } class="box">
+				<form
+					method="post"
+					action={ templ.URL("/tasks/" + itoa(task.ID) + "/update") }
+					class="box"
+					id="task-form"
+					data-client-task-types={ serializeClientTaskTypes(byClient) }
+					data-keep-client={ itoa(task.ClientID) }
+					data-keep-task-type={ itoa(task.TaskTypeID) }
+				>
 					<div class="field">
 						<label class="label">{ i18n.T(ctx, "tasks.label_title") }</label>
 						<div class="control">
@@ -145,7 +161,7 @@ templ EditTask(task models.Task, clients []models.Client, types []models.TaskTyp
 						<label class="label">{ i18n.T(ctx, "tasks.label_client") }</label>
 						<div class="control">
 							<div class="select">
-								<select name="client_id">
+								<select name="client_id" id="task-client-select">
 									for _, c := range clients {
 										if !c.IsArchived || c.ID == task.ClientID {
 											<option value={ itoa(c.ID) } selected?={ c.ID == task.ClientID }>{ c.Name }</option>
@@ -159,7 +175,7 @@ templ EditTask(task models.Task, clients []models.Client, types []models.TaskTyp
 						<label class="label">{ i18n.T(ctx, "tasks.label_task_type") }</label>
 						<div class="control">
 							<div class="select">
-								<select name="task_type_id">
+								<select name="task_type_id" id="task-type-select">
 									for _, t := range types {
 										<option value={ itoa(t.ID) } selected?={ t.ID == task.TaskTypeID }>{ t.Name }</option>
 									}
@@ -204,5 +220,6 @@ templ EditTask(task models.Task, clients []models.Client, types []models.TaskTyp
 				</form>
 			</div>
 		</section>
+		<script src="/static/js/task-filter.js"></script>
 	}
 }

@@ -45,10 +45,51 @@ func (h *Handlers) createClient(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/clients", http.StatusSeeOther)
 }
 
+// clientTaskTypes returns the task types worth offering as a filter on a
+// client: the ones assigned to it — plus any its existing tasks still
+// carry, so no logged type drops out of the dropdown. A client with no
+// assignment accepts every task type, the same rule
+// taskTypeAllowedForClient enforces on save, so it gets the full list.
+func clientTaskTypes(conn *sql.DB, userID, clientID int64) ([]models.TaskType, error) {
+	allTypes, err := db.ListTaskTypes(conn, userID)
+	if err != nil {
+		return nil, err
+	}
+	assigned, err := db.ListTaskTypesForClient(conn, userID, clientID)
+	if err != nil {
+		return nil, err
+	}
+	if len(assigned) == 0 {
+		return allTypes, nil
+	}
+
+	keep := make(map[int64]bool, len(assigned))
+	for _, t := range assigned {
+		keep[t.ID] = true
+	}
+	used, err := db.ListTaskTypeIDsUsedByClient(conn, userID, clientID)
+	if err != nil {
+		return nil, err
+	}
+	for _, id := range used {
+		keep[id] = true
+	}
+
+	// Filtering allTypes rather than concatenating keeps the dropdown in
+	// the same order as the rest of the page.
+	types := make([]models.TaskType, 0, len(keep))
+	for _, t := range allTypes {
+		if keep[t.ID] {
+			types = append(types, t)
+		}
+	}
+	return types, nil
+}
+
 // taskTypeChoices lists the user's task types, each flagged with whether
 // it is currently assigned to the given client.
 func taskTypeChoices(conn *sql.DB, userID, clientID int64) ([]templates.TaskTypeChoice, error) {
-	assigned, err := db.ListTaskTypesForClient(conn, clientID)
+	assigned, err := db.ListTaskTypesForClient(conn, userID, clientID)
 	if err != nil {
 		return nil, err
 	}
@@ -196,6 +237,12 @@ func (h *Handlers) clientDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	filterTypes, err := clientTaskTypes(h.DB, userID(r), id)
+	if err != nil {
+		fail(w, err)
+		return
+	}
+
 	tasks, err := db.ListTasksByClientFiltered(h.DB, userID(r), id, selectedPeriodID, selectedTaskTypeID)
 	if err != nil {
 		fail(w, err)
@@ -208,7 +255,7 @@ func (h *Handlers) clientDetail(w http.ResponseWriter, r *http.Request) {
 		hoursByType[t.TaskTypeID] += t.HoursSpent
 	}
 
-	templates.ClientDetail(client, tasks, totalHours, hoursByType, allTypes, periods, selectedPeriodID, selectedTaskTypeID).Render(r.Context(), w)
+	templates.ClientDetail(client, tasks, totalHours, hoursByType, allTypes, filterTypes, periods, selectedPeriodID, selectedTaskTypeID).Render(r.Context(), w)
 }
 
 // clientFilterID reads an optional int64 query param; a blank value means

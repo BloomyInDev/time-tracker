@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"database/sql"
+	"errors"
 	"net/http"
 	"strconv"
 	"time"
@@ -54,7 +55,43 @@ func (h *Handlers) listTasks(w http.ResponseWriter, r *http.Request) {
 		defaultPeriodID = p.ID
 	}
 
-	templates.Tasks(clients, types, periods, byClient, groupByDay(tasks), time.Now().Format("2006-01-02"), defaultPeriodID).Render(r.Context(), w)
+	// The dropdown starts on the first client the form offers, so render
+	// that client's task types straight away; task-filter.js takes over
+	// from there.
+	initial := selectableTaskTypes(types, byClient[firstUnarchivedClientID(clients)])
+
+	templates.Tasks(clients, types, initial, periods, byClient, groupByDay(tasks), time.Now().Format("2006-01-02"), defaultPeriodID).Render(r.Context(), w)
+}
+
+// firstUnarchivedClientID returns the client the task form preselects, or
+// 0 when the user has no client to log against.
+func firstUnarchivedClientID(clients []models.Client) int64 {
+	for _, c := range clients {
+		if !c.IsArchived {
+			return c.ID
+		}
+	}
+	return 0
+}
+
+// selectableTaskTypes narrows the user's task types to those assigned to a
+// client. A client with none assigned accepts them all, so the full list
+// comes back unchanged.
+func selectableTaskTypes(types []models.TaskType, allowedIDs []int64) []models.TaskType {
+	if len(allowedIDs) == 0 {
+		return types
+	}
+	allowed := make(map[int64]bool, len(allowedIDs))
+	for _, id := range allowedIDs {
+		allowed[id] = true
+	}
+	selectable := make([]models.TaskType, 0, len(allowedIDs))
+	for _, t := range types {
+		if allowed[t.ID] {
+			selectable = append(selectable, t)
+		}
+	}
+	return selectable
 }
 
 // parsePeriodID reads an optional period_id form value; a blank or
@@ -101,10 +138,18 @@ func clientAcceptsTasks(conn *sql.DB, userID, clientID int64) (bool, error) {
 	return !client.IsArchived, nil
 }
 
-// taskTypeAllowedForClient enforces that a task type is one of the
-// client's configured task types, when the client has any configured.
-func taskTypeAllowedForClient(conn *sql.DB, clientID, taskTypeID int64) (bool, error) {
-	allowed, err := db.ListTaskTypesForClient(conn, clientID)
+// taskTypeAllowedForClient enforces that a task type belongs to the user
+// and, when the client has task types configured, that it is one of them.
+// A client with none configured accepts any of the user's task types.
+func taskTypeAllowedForClient(conn *sql.DB, userID, clientID, taskTypeID int64) (bool, error) {
+	if _, err := db.GetTaskType(conn, userID, taskTypeID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	allowed, err := db.ListTaskTypesForClient(conn, userID, clientID)
 	if err != nil {
 		return false, err
 	}
@@ -178,7 +223,7 @@ func (h *Handlers) createTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	allowed, err := taskTypeAllowedForClient(h.DB, f.clientID, f.taskTypeID)
+	allowed, err := taskTypeAllowedForClient(h.DB, userID(r), f.clientID, f.taskTypeID)
 	if err != nil {
 		fail(w, err)
 		return
@@ -230,8 +275,13 @@ func (h *Handlers) editTaskForm(w http.ResponseWriter, r *http.Request) {
 		fail(w, err)
 		return
 	}
+	byClient, err := db.ListTaskTypesByClient(h.DB, userID(r))
+	if err != nil {
+		fail(w, err)
+		return
+	}
 
-	templates.EditTask(task, clients, types, periods).Render(r.Context(), w)
+	templates.EditTask(task, clients, types, periods, byClient).Render(r.Context(), w)
 }
 
 func (h *Handlers) updateTask(w http.ResponseWriter, r *http.Request) {
@@ -265,14 +315,19 @@ func (h *Handlers) updateTask(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	allowed, err := taskTypeAllowedForClient(h.DB, f.clientID, f.taskTypeID)
-	if err != nil {
-		fail(w, err)
-		return
-	}
-	if !allowed {
-		http.Error(w, "task type not allowed for this client", http.StatusBadRequest)
-		return
+	// Same idea for the task type: a pair that predates the client's
+	// current configuration stays editable, so long as the edit doesn't
+	// change either side of it.
+	if f.clientID != existing.ClientID || f.taskTypeID != existing.TaskTypeID {
+		allowed, err := taskTypeAllowedForClient(h.DB, userID(r), f.clientID, f.taskTypeID)
+		if err != nil {
+			fail(w, err)
+			return
+		}
+		if !allowed {
+			http.Error(w, "task type not allowed for this client", http.StatusBadRequest)
+			return
+		}
 	}
 
 	err = db.UpdateTask(h.DB, models.Task{

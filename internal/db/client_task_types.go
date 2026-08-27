@@ -22,13 +22,17 @@ func UnassignTaskTypeFromClient(conn *sql.DB, clientID, taskTypeID int64) error 
 	return err
 }
 
-func ListTaskTypesForClient(conn *sql.DB, clientID int64) ([]models.TaskType, error) {
+// ListTaskTypesForClient returns the task types assigned to one of the
+// user's clients. It is scoped by user on both sides of the assignment, so
+// it stays empty for a client the user doesn't own.
+func ListTaskTypesForClient(conn *sql.DB, userID, clientID int64) ([]models.TaskType, error) {
 	rows, err := conn.Query(`
 		SELECT tt.id, tt.user_id, tt.name
 		FROM task_types tt
 		JOIN task_types_for_client ttc ON ttc.task_type_id = tt.id
-		WHERE ttc.client_id = ?
-		ORDER BY tt.name`, clientID)
+		JOIN clients c ON c.id = ttc.client_id
+		WHERE ttc.client_id = ? AND c.user_id = ? AND tt.user_id = ?
+		ORDER BY tt.name`, clientID, userID, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -43,15 +47,6 @@ func ListTaskTypesForClient(conn *sql.DB, clientID int64) ([]models.TaskType, er
 		types = append(types, t)
 	}
 	return types, rows.Err()
-}
-
-func IsTaskTypeAssignedToClient(conn *sql.DB, clientID, taskTypeID int64) (bool, error) {
-	var exists bool
-	err := conn.QueryRow(
-		`SELECT EXISTS(SELECT 1 FROM task_types_for_client WHERE client_id = ? AND task_type_id = ?)`,
-		clientID, taskTypeID,
-	).Scan(&exists)
-	return exists, err
 }
 
 // ListTaskTypesByClient returns, for a user's clients, the set of task type
@@ -77,4 +72,28 @@ func ListTaskTypesByClient(conn *sql.DB, userID int64) (map[int64][]int64, error
 		result[clientID] = append(result[clientID], taskTypeID)
 	}
 	return result, rows.Err()
+}
+
+// ListTaskTypeIDsUsedByClient returns the task type IDs a client's existing
+// tasks carry. Assignments can change after the fact, so a filter over a
+// client's tasks has to account for types that are no longer assigned.
+func ListTaskTypeIDsUsedByClient(conn *sql.DB, userID, clientID int64) ([]int64, error) {
+	rows, err := conn.Query(
+		`SELECT DISTINCT task_type_id FROM tasks WHERE user_id = ? AND client_id = ?`,
+		userID, clientID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var ids []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
 }

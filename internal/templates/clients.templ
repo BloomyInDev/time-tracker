@@ -256,7 +256,7 @@ templ ClientReport(view ClientReportView) {
 	</html>
 }
 
-templ ClientDetail(client models.Client, tasks []models.Task, totalHours float64, hoursByType map[int64]float64, allTypes []models.TaskType, periods []models.Period, selectedPeriodID int64, selectedTaskTypeID int64) {
+templ ClientDetail(client models.Client, tasks []models.Task, totalHours float64, hoursByType map[int64]float64, allTypes []models.TaskType, filterTypes []models.TaskType, periods []models.Period, selectedPeriodID int64, selectedTaskTypeID int64) {
 	@Layout(client.Name) {
 		<section class="section">
 			<div class="container">
@@ -280,7 +280,7 @@ templ ClientDetail(client models.Client, tasks []models.Task, totalHours float64
 						</a>
 					</div>
 				</div>
-				if len(periods) > 0 || len(allTypes) > 0 {
+				if len(periods) > 0 || len(filterTypes) > 0 {
 					<form method="get" class="box">
 						<div class="field is-grouped">
 							if len(periods) > 0 {
@@ -296,13 +296,13 @@ templ ClientDetail(client models.Client, tasks []models.Task, totalHours float64
 									</div>
 								</div>
 							}
-							if len(allTypes) > 0 {
+							if len(filterTypes) > 0 {
 								<div class="control">
 									<label class="label">{ i18n.T(ctx, "clients.filter_by_task_type") }</label>
 									<div class="select">
 										<select name="task_type_id" onchange="this.form.submit()">
 											<option value="" selected?={ selectedTaskTypeID == 0 }>{ i18n.T(ctx, "clients.all_task_types") }</option>
-											for _, t := range allTypes {
+											for _, t := range filterTypes {
 												<option value={ itoa(t.ID) } selected?={ t.ID == selectedTaskTypeID }>{ t.Name }</option>
 											}
 										</select>
