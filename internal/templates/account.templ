@@ -27,7 +27,7 @@ templ Account(user models.User, errMsg string, successMsg string) {
 								</div>
 							</div>
 						</div>
-						<h2 class="subtitle">{ i18n.T(ctx, "account.daily_hours") }</h2>
+						<h2 class="subtitle">{ i18n.T(ctx, "account.time_settings") }</h2>
 						<div class="box">
 							<form method="post" action="/account/hours">
 								for i, label := range weekdayLabels(ctx) {
@@ -44,6 +44,13 @@ templ Account(user models.User, errMsg string, successMsg string) {
 										</div>
 									</div>
 								}
+								<div class="field">
+									<label class="label">{ i18n.T(ctx, "account.time_start_date") }</label>
+									<div class="control">
+										<input class="input" type="date" name="time_start_date" value={ user.TimeStartDate }/>
+									</div>
+									<p class="help">{ i18n.T(ctx, "account.time_start_date_help") }</p>
+								</div>
 								<div class="field">
 									<div class="control">
 										<button class="button is-primary" type="submit" data-click-on="ctrl+s">

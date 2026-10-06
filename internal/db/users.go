@@ -7,12 +7,15 @@ import (
 )
 
 const userColumns = `id, email, password_hash,
-	hours_mon, hours_tue, hours_wed, hours_thu, hours_fri, hours_sat, hours_sun`
+	hours_mon, hours_tue, hours_wed, hours_thu, hours_fri, hours_sat, hours_sun, time_start_date`
 
 func scanUser(row interface{ Scan(...any) error }, u *models.User) error {
-	return row.Scan(&u.ID, &u.Email, &u.PasswordHash,
+	var start sql.NullString
+	err := row.Scan(&u.ID, &u.Email, &u.PasswordHash,
 		&u.DailyHours[0], &u.DailyHours[1], &u.DailyHours[2], &u.DailyHours[3],
-		&u.DailyHours[4], &u.DailyHours[5], &u.DailyHours[6])
+		&u.DailyHours[4], &u.DailyHours[5], &u.DailyHours[6], &start)
+	u.TimeStartDate = start.String
+	return err
 }
 
 func GetUser(conn *sql.DB, id int64) (models.User, error) {
@@ -39,12 +42,17 @@ func ListUsers(conn *sql.DB) ([]models.User, error) {
 	return users, rows.Err()
 }
 
-// UpdateDailyHours saves a user's per-weekday hours target (index 0 =
-// Monday .. 6 = Sunday).
-func UpdateDailyHours(conn *sql.DB, id int64, hours [7]float64) error {
+// UpdateTimeSettings saves a user's per-weekday hours target (index 0 =
+// Monday .. 6 = Sunday) and the default start date of the /time page. An
+// empty startDate clears it.
+func UpdateTimeSettings(conn *sql.DB, id int64, hours [7]float64, startDate string) error {
+	var start any
+	if startDate != "" {
+		start = startDate
+	}
 	_, err := conn.Exec(
-		`UPDATE users SET hours_mon = ?, hours_tue = ?, hours_wed = ?, hours_thu = ?, hours_fri = ?, hours_sat = ?, hours_sun = ? WHERE id = ?`,
-		hours[0], hours[1], hours[2], hours[3], hours[4], hours[5], hours[6], id,
+		`UPDATE users SET hours_mon = ?, hours_tue = ?, hours_wed = ?, hours_thu = ?, hours_fri = ?, hours_sat = ?, hours_sun = ?, time_start_date = ? WHERE id = ?`,
+		hours[0], hours[1], hours[2], hours[3], hours[4], hours[5], hours[6], start, id,
 	)
 	return err
 }

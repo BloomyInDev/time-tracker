@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/bloomyindev/time-tracker/internal/db"
 	"github.com/bloomyindev/time-tracker/internal/service/auth"
@@ -15,7 +16,7 @@ import (
 func (h *Handlers) AccountRouter() chi.Router {
 	r := chi.NewRouter()
 	r.Get("/", h.account)
-	r.Post("/hours", h.updateDailyHours)
+	r.Post("/hours", h.updateTimeSettings)
 	r.Post("/password", h.changePassword)
 	return r
 }
@@ -29,7 +30,7 @@ func (h *Handlers) account(w http.ResponseWriter, r *http.Request) {
 	templates.Account(user, "", "").Render(r.Context(), w)
 }
 
-func (h *Handlers) updateDailyHours(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) updateTimeSettings(w http.ResponseWriter, r *http.Request) {
 	user, err := db.GetUser(h.DB, userID(r))
 	if err != nil {
 		fail(w, err)
@@ -53,12 +54,21 @@ func (h *Handlers) updateDailyHours(w http.ResponseWriter, r *http.Request) {
 		hours[i] = hrs
 	}
 
-	if err := db.UpdateDailyHours(h.DB, userID(r), hours); err != nil {
+	startDate := r.FormValue("time_start_date")
+	if startDate != "" {
+		if _, err := time.Parse("2006-01-02", startDate); err != nil {
+			http.Error(w, "invalid start date", http.StatusBadRequest)
+			return
+		}
+	}
+
+	if err := db.UpdateTimeSettings(h.DB, userID(r), hours, startDate); err != nil {
 		fail(w, err)
 		return
 	}
 	user.DailyHours = hours
-	templates.Account(user, "", i18n.T(r.Context(), "account.hours_saved")).Render(r.Context(), w)
+	user.TimeStartDate = startDate
+	templates.Account(user, "", i18n.T(r.Context(), "account.time_saved")).Render(r.Context(), w)
 }
 
 func (h *Handlers) changePassword(w http.ResponseWriter, r *http.Request) {

@@ -79,10 +79,14 @@ func buildTimeView(conn *sql.DB, userID int64, from, to string) (templates.TimeV
 		to = time.Now().Format("2006-01-02")
 	}
 
-	// No range given at all: default to Jan 1 of this year through today.
+	// No range given at all: default to the user's start date (Jan 1 of
+	// this year if unset) through today.
 	if from == "" && to == "" {
 		now := time.Now()
-		from = time.Date(now.Year(), time.January, 1, 0, 0, 0, 0, now.Location()).Format("2006-01-02")
+		from = user.TimeStartDate
+		if from == "" {
+			from = time.Date(now.Year(), time.January, 1, 0, 0, 0, 0, now.Location()).Format("2006-01-02")
+		}
 		to = now.Format("2006-01-02")
 	}
 

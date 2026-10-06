@@ -283,3 +283,36 @@ func TestMigratesLegacyDatabase(t *testing.T) {
 		t.Errorf("task_types_for_client = %d rows, want the assignment cascaded away", n)
 	}
 }
+
+func TestTimeSettingsRoundTrip(t *testing.T) {
+	conn, err := Open(filepath.Join(t.TempDir(), "settings.db"), Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+	if _, err := conn.Exec(`INSERT INTO users (id, email, password_hash) VALUES (1, 'a@b.c', 'x')`); err != nil {
+		t.Fatal(err)
+	}
+
+	u, err := GetUser(conn, 1)
+	if err != nil || u.TimeStartDate != "" {
+		t.Fatalf("new user: start = %q, err = %v, want empty", u.TimeStartDate, err)
+	}
+
+	hours := [7]float64{7, 7, 7, 7, 7, 0, 0}
+	if err := UpdateTimeSettings(conn, 1, hours, "2026-09-01"); err != nil {
+		t.Fatal(err)
+	}
+	u, _ = GetUser(conn, 1)
+	if u.TimeStartDate != "2026-09-01" || u.DailyHours != hours {
+		t.Errorf("after save: start = %q, hours = %v", u.TimeStartDate, u.DailyHours)
+	}
+
+	if err := UpdateTimeSettings(conn, 1, hours, ""); err != nil {
+		t.Fatal(err)
+	}
+	u, _ = GetUser(conn, 1)
+	if u.TimeStartDate != "" {
+		t.Errorf("after clearing: start = %q, want empty", u.TimeStartDate)
+	}
+}
