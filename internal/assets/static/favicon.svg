@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Bulma palette: primary #00d1b2, link #485fc7, danger #f14668, warning #ffe08a -->
+  <defs>
+    <rect id="cell" width="3.6" height="2.4" rx="1" fill="#00d1b2"/>
+  </defs>
+  <rect width="32" height="32" rx="8" fill="#00d1b2"/>
+  <!-- calendar: white card, blue header, yellow binder rings -->
+  <rect x="3" y="5" width="23" height="21" rx="3.5" fill="#fff"/>
+  <path d="M3 8.5A3.5 3.5 0 0 1 6.5 5h16A3.5 3.5 0 0 1 26 8.5V11.5H3z" fill="#485fc7"/>
+  <rect x="7.5" y="2" width="3" height="6" rx="1.5" fill="#ffe08a"/>
+  <rect x="18.5" y="2" width="3" height="6" rx="1.5" fill="#ffe08a"/>
+  <!-- day cells: 3x3 grid, origin = first cell. Steps are 5.2 across and 4 down.
+       Side margins 4.5, top and bottom 2.05. The bottom-right cell is left out, the clock covers it. -->
+  <g transform="translate(7.5 13.55)">
+    <use href="#cell"/>
+    <use href="#cell" x="5.2"/>
+    <use href="#cell" x="10.4"/>
+    <use href="#cell" y="4"/>
+    <use href="#cell" x="5.2" y="4"/>
+    <use href="#cell" x="10.4" y="4"/>
+    <use href="#cell" y="8"/>
+    <use href="#cell" x="5.2" y="8"/>
+    <use href="#cell" x="10.4" y="8"/>
+  </g>
+  <!-- clock tucked into the tile corner, drawn around its own centre -->
+  <g transform="translate(25 25)">
+    <circle r="5.8" fill="#00d1b2"/>
+    <circle r="4.6" fill="#ffe08a"/>
+    <path d="M0 -3v3h2.2" fill="none" stroke="#485fc7" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle r="1" fill="#f14668"/>
+  </g>
+</svg>
