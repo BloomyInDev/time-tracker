@@ -51,7 +51,11 @@ internal/service/auth  login, sessions and middleware
 
 ## Continuous integration
 
-- `.github/workflows/build.yml` builds cross-compiled binaries for Linux, macOS
-  and Windows on x86 and ARM, and publishes a multi-arch Docker image to GHCR.
+- `.github/workflows/build.yml` builds cross-compiled binaries for Linux (amd64,
+  arm64, armv7), macOS (amd64, arm64) and Windows (amd64, arm64), and publishes
+  a Docker image to GHCR for linux/amd64, linux/arm64 and linux/arm/v7.
 - `.github/workflows/release.yml` builds the same target matrix and attaches the
   tarballs to a GitHub Release when a `v*` tag is pushed.
+
+Keep the two matrices, the Docker `platforms` list and the README tables in
+sync when adding or dropping a target.

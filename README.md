@@ -41,8 +41,7 @@ a user and log in.
 ### Docker (recommended)
 
 A multi-arch image is published to GHCR on every push to `master` and on
-version tags, for `linux/amd64`, `linux/arm64`, `linux/arm/v7`, `linux/arm/v6`,
-`linux/386`, `linux/ppc64le`, `linux/s390x` and `linux/riscv64`.
+version tags, for `linux/amd64`, `linux/arm64` and `linux/arm/v7`.
 
 ```sh
 docker run -d -p 8080:8080 \
@@ -71,14 +70,15 @@ Download a tarball for your OS and architecture from the
 [Releases](https://github.com/bloomyindev/time-tracker/releases) page. Each
 archive contains the single `time-tracker` binary. Prebuilt targets:
 
-| OS      | Architectures                                     |
-|---------|---------------------------------------------------|
-| Linux   | amd64, 386, arm64, armv7, ppc64le, riscv64, s390x, loong64 |
-| macOS   | amd64, arm64                                       |
-| Windows | amd64, 386, arm64                                  |
-| FreeBSD | amd64, arm64                                       |
-| OpenBSD | amd64, arm64                                       |
-| NetBSD  | amd64                                              |
+| OS      | Architectures |
+|---------|---------------|
+| Linux   | amd64, arm64, armv7 |
+| macOS   | amd64, arm64  |
+| Windows | amd64, arm64  |
+
+Other targets Go supports (for example 386, riscv64, ppc64le, s390x, loong64 or
+the BSDs) should work too: the binary is pure Go with no CGO. We just don't
+publish binaries or Docker images for them, so build from source instead.
 
 ```sh
 tar -xzf time-tracker_*_linux_amd64.tar.gz
