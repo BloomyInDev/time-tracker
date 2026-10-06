@@ -135,7 +135,7 @@ templ EditClient(client models.Client, taskTypes []TaskTypeChoice) {
 					</div>
 					<div class="field is-grouped">
 						<div class="control">
-							<button class="button is-primary" type="submit">
+							<button class="button is-primary" type="submit" data-click-on="ctrl+s">
 								@icons.Save()
 								{ i18n.T(ctx, "clients.save") }
 							</button>

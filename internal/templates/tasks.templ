@@ -211,7 +211,7 @@ templ EditTask(task models.Task, clients []models.Client, types []models.TaskTyp
 					</div>
 					<div class="field">
 						<div class="control">
-							<button class="button is-primary" type="submit">
+							<button class="button is-primary" type="submit" data-click-on="ctrl+s">
 								@icons.Save()
 								{ i18n.T(ctx, "tasks.save") }
 							</button>
