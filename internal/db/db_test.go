@@ -3,11 +3,26 @@ package db
 import (
 	"database/sql"
 	"errors"
+	"io/fs"
 	"path/filepath"
 	"testing"
 
+	"github.com/bloomyindev/time-tracker/migrations"
 	_ "modernc.org/sqlite"
 )
+
+// assertAllMigrationsRecorded checks the ledger holds one row per embedded
+// migration file, so adding a migration never means editing this file.
+func assertAllMigrationsRecorded(t *testing.T, conn *sql.DB) {
+	t.Helper()
+	files, err := fs.Glob(migrations.FS, "*.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n := count(t, conn, `SELECT count(*) FROM schema_migrations`); n != len(files) {
+		t.Errorf("schema_migrations = %d rows, want %d (one per migration file)", n, len(files))
+	}
+}
 
 // open builds a migrated database in a temp dir.
 func open(t *testing.T) *sql.DB {
@@ -197,9 +212,7 @@ func TestMigrationsAreIdempotent(t *testing.T) {
 	if n := count(t, conn, `SELECT count(*) FROM tasks`); n != 1 {
 		t.Errorf("tasks = %d, want the seeded row intact", n)
 	}
-	if n := count(t, conn, `SELECT count(*) FROM schema_migrations`); n != 2 {
-		t.Errorf("schema_migrations = %d rows, want one per migration file", n)
-	}
+	assertAllMigrationsRecorded(t, conn)
 }
 
 // legacySchema is the schema exactly as the pre-ledger startup code left it:
@@ -257,9 +270,7 @@ func TestMigratesLegacyDatabase(t *testing.T) {
 	if n := count(t, conn, `SELECT count(*) FROM pragma_table_info('users') WHERE name LIKE 'hours_%'`); n != 7 {
 		t.Errorf("hours_* columns = %d, want 7", n)
 	}
-	if n := count(t, conn, `SELECT count(*) FROM schema_migrations`); n != 2 {
-		t.Errorf("schema_migrations = %d rows, want one per migration file", n)
-	}
+	assertAllMigrationsRecorded(t, conn)
 
 	// The cascade only exists if 0002 actually rebuilt the table.
 	if _, err := conn.Exec(`DELETE FROM tasks`); err != nil {
