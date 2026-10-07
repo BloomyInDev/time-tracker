@@ -2,7 +2,6 @@ en:
   nav:
     brand: "Time Tracker"
     time: "Time"
-    clients: "Clients"
     task_types: "Task Types"
     tasks: "Tasks"
     periods: "Periods"
@@ -16,12 +15,9 @@ en:
     invalid_credentials: "Invalid credentials"
     something_went_wrong: "Something went wrong"
   clients:
-    title: "Clients"
-    name_placeholder: "Client name"
     add: "Add"
     name: "Name"
     details: "Details"
-    edit_title: "Edit client"
     cancel: "Cancel"
     delete: "Delete"
     hours_logged: "%{hours} hours logged total"
@@ -30,7 +26,6 @@ en:
     col_hours: "Hours"
     col_date: "Date"
     col_task_type: "Task type"
-    task_types_allowed: "Task types allowed for this client"
     filter_by_period: "Filter by period"
     all_periods: "All periods"
     filter_by_task_type: "Filter by task type"
@@ -38,14 +33,11 @@ en:
     save: "Save"
     export_csv: "Export to CSV"
     export_pdf: "Export to PDF"
-    report_title: "Client report"
     total: "Total"
     period: "Period"
     task_type: "Task type"
-    search_placeholder: "Search clients..."
     archived: "Archived"
     edit: "Edit"
-    archived_help: "An archived client keeps its history but accepts no new tasks."
   task_types:
     title: "Task Types"
     name_placeholder: "Task type name"
@@ -105,7 +97,6 @@ en:
     add: "Add"
     show_future: "Show upcoming days"
     col_title: "Title"
-    col_client: "Client"
     col_task_type: "Task Type"
     col_period: "Period"
     col_hours: "Hours"
@@ -113,7 +104,6 @@ en:
     delete: "Delete"
     edit_title: "Edit Task"
     label_title: "Title"
-    label_client: "Client"
     label_task_type: "Task Type"
     label_period: "Period"
     label_hours: "Hours spent"
@@ -139,3 +129,35 @@ en:
     friday: "Friday"
     saturday: "Saturday"
     sunday: "Sunday"
+  # Vocabulary presets. Keys that a preset may rename live only here, under
+  # presets.<name>.<key>. "default" holds them all; any other preset lists just
+  # the ones it renames and falls back to "default" for the rest.
+  presets:
+    default:
+      nav:
+        clients: "Clients"
+      clients:
+        title: "Clients"
+        name_placeholder: "Client name"
+        edit_title: "Edit client"
+        task_types_allowed: "Task types allowed for this client"
+        report_title: "Client report"
+        search_placeholder: "Search clients..."
+        archived_help: "An archived client keeps its history but accepts no new tasks."
+      tasks:
+        col_client: "Client"
+        label_client: "Client"
+    projects:
+      nav:
+        clients: "Projects"
+      clients:
+        title: "Projects"
+        name_placeholder: "Project name"
+        edit_title: "Edit project"
+        task_types_allowed: "Task types allowed for this project"
+        report_title: "Project report"
+        search_placeholder: "Search projects..."
+        archived_help: "An archived project keeps its history but accepts no new tasks."
+      tasks:
+        col_client: "Project"
+        label_client: "Project"
