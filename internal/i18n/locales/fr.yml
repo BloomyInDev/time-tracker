@@ -122,6 +122,9 @@ fr:
     time_saved: "Réglages du suivi du temps mis à jour"
     time_start_date: "Date de début par défaut de la page temps"
     time_start_date_help: "Laisser vide pour commencer au 1er janvier de l'année en cours."
+    vocabulary: "Vocabulaire"
+    vocabulary_help: "Renomme les clients dans toute l'application, par exemple en projets."
+    vocabulary_saved: "Vocabulaire mis à jour"
     monday: "Lundi"
     tuesday: "Mardi"
     wednesday: "Mercredi"
@@ -135,6 +138,7 @@ fr:
   # "default" pour le reste.
   presets:
     default:
+      name: "Clients (par défaut)"
       nav:
         clients: "Clients"
       clients:
@@ -149,6 +153,7 @@ fr:
         col_client: "Client"
         label_client: "Client"
     projects:
+      name: "Projets"
       nav:
         clients: "Projets"
       clients:

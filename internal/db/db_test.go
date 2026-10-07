@@ -316,3 +316,23 @@ func TestTimeSettingsRoundTrip(t *testing.T) {
 		t.Errorf("after clearing: start = %q, want empty", u.TimeStartDate)
 	}
 }
+
+func TestVocabularyDefaultsAndRoundTrip(t *testing.T) {
+	conn := open(t)
+	seed(t, conn)
+
+	u, err := GetUser(conn, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if u.Vocabulary != "default" {
+		t.Errorf("new user vocabulary = %q, want default", u.Vocabulary)
+	}
+
+	if err := UpdateVocabulary(conn, 1, "projects"); err != nil {
+		t.Fatal(err)
+	}
+	if u, _ = GetUser(conn, 1); u.Vocabulary != "projects" {
+		t.Errorf("vocabulary = %q, want projects", u.Vocabulary)
+	}
+}

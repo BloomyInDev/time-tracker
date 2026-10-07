@@ -6,6 +6,8 @@ import (
 	"strconv"
 
 	"github.com/bloomyindev/time-tracker/internal/config"
+	"github.com/bloomyindev/time-tracker/internal/db"
+	appi18n "github.com/bloomyindev/time-tracker/internal/i18n"
 	"github.com/bloomyindev/time-tracker/internal/service/auth"
 	"github.com/go-chi/chi/v5"
 )
@@ -58,4 +60,18 @@ func parseForm(w http.ResponseWriter, r *http.Request) bool {
 // can't act on.
 func fail(w http.ResponseWriter, err error) {
 	http.Error(w, err.Error(), http.StatusInternalServerError)
+}
+
+// withVocabulary puts the user's wording preset on the request context, so
+// every template renders "clients" or "projects" as they chose. It must run
+// after RequireAuth.
+func (h *Handlers) withVocabulary(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, err := db.GetUser(h.DB, userID(r))
+		if err != nil {
+			fail(w, err)
+			return
+		}
+		next.ServeHTTP(w, r.WithContext(appi18n.WithPreset(r.Context(), user.Vocabulary)))
+	})
 }

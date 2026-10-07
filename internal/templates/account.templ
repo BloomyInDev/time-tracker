@@ -1,6 +1,7 @@
 package templates
 
 import (
+	appi18n "github.com/bloomyindev/time-tracker/internal/i18n"
 	"github.com/bloomyindev/time-tracker/internal/models"
 	"github.com/bryanvaz/go-templ-lucide-icons/icons"
 	"github.com/invopop/ctxi18n/i18n"
@@ -54,6 +55,31 @@ templ Account(user models.User, errMsg string, successMsg string) {
 								<div class="field">
 									<div class="control">
 										<button class="button is-primary" type="submit" data-click-on="ctrl+s">
+											@icons.Save()
+											{ i18n.T(ctx, "account.save") }
+										</button>
+									</div>
+								</div>
+							</form>
+						</div>
+						<h2 class="subtitle">{ i18n.T(ctx, "account.vocabulary") }</h2>
+						<div class="box">
+							<form method="post" action="/account/vocabulary">
+								<div class="field">
+									<div class="control">
+										<div class="select is-fullwidth">
+											<select name="vocabulary">
+												for _, name := range appi18n.Presets {
+													<option value={ name } selected?={ user.Vocabulary == name }>{ i18n.T(ctx, "presets." + name + ".name") }</option>
+												}
+											</select>
+										</div>
+									</div>
+									<p class="help">{ i18n.T(ctx, "account.vocabulary_help") }</p>
+								</div>
+								<div class="field">
+									<div class="control">
+										<button class="button is-primary" type="submit">
 											@icons.Save()
 											{ i18n.T(ctx, "account.save") }
 										</button>

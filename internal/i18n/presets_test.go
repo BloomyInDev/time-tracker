@@ -34,6 +34,34 @@ func loadKeys(t *testing.T, locale string) map[string]bool {
 	return keys
 }
 
+// TestPresetsListMatchesLocales fails when Presets and the presets.* blocks
+// of the locale files drift apart, or a preset has no name.
+func TestPresetsListMatchesLocales(t *testing.T) {
+	for _, locale := range []string{"en", "fr"} {
+		keys := loadKeys(t, locale)
+		declared := map[string]bool{}
+		for key := range keys {
+			if after, ok := strings.CutPrefix(key, "presets."); ok {
+				name, _, _ := strings.Cut(after, ".")
+				declared[name] = true
+			}
+		}
+		for _, name := range Presets {
+			if !declared[name] {
+				t.Errorf("%s: preset %q has no presets.%s block", locale, name, name)
+			}
+			if !keys["presets."+name+".name"] {
+				t.Errorf("%s: preset %q has no presets.%s.name", locale, name, name)
+			}
+		}
+		for name := range declared {
+			if !IsPreset(name) {
+				t.Errorf("%s: presets.%s is not listed in Presets", locale, name)
+			}
+		}
+	}
+}
+
 // TestPresetsFallBackToDefault fails when a preset renames a key that
 // "default" does not define (the fallback would have nothing to land on),
 // when a key lives both in the base and in "default", or when en and fr

@@ -2,6 +2,7 @@ package i18n
 
 import (
 	"context"
+	"slices"
 
 	ci "github.com/invopop/ctxi18n/i18n"
 )
@@ -9,6 +10,15 @@ import (
 // DefaultPreset is the vocabulary a user gets when none is chosen. Every
 // key a preset may rename is defined under presets.default.
 const DefaultPreset = "default"
+
+// Presets lists the selectable vocabulary presets, matching the
+// presets.<name> blocks of the locale files (a test keeps them in sync).
+var Presets = []string{DefaultPreset, "projects"}
+
+// IsPreset reports whether name is a known preset.
+func IsPreset(name string) bool {
+	return slices.Contains(Presets, name)
+}
 
 type presetKey struct{}
 
