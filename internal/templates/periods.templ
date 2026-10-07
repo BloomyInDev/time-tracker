@@ -18,7 +18,7 @@ templ EditPeriod(period models.Period) {
 							<input class="input" type="text" name="name" value={ period.Name } required/>
 						</div>
 					</div>
-					<div class="field is-grouped">
+					<div class="field is-grouped is-grouped-multiline">
 						<div class="control">
 							<button class="button is-primary" type="submit" data-click-on="ctrl+s">
 								@icons.Save()
@@ -53,46 +53,48 @@ templ Periods(periods []models.Period) {
 						</div>
 					</div>
 				</form>
-				<table class="table is-fullwidth is-hoverable">
-					<thead>
-						<tr>
-							<th>{ i18n.T(ctx, "periods.name") }</th>
-							<th class="has-text-right"></th>
-						</tr>
-					</thead>
-					<tbody>
-						for _, p := range periods {
+				<div class="table-container">
+					<table class="table is-fullwidth is-hoverable">
+						<thead>
 							<tr>
-								<td>
-									{ p.Name }
-									if p.IsDefault {
-										<span class="tag is-primary is-light ml-2">{ i18n.T(ctx, "periods.default") }</span>
-									}
-								</td>
-								<td class="has-text-right">
-									if !p.IsDefault {
-										<form method="post" action={ templ.URL("/periods/" + itoa(p.ID) + "/default") } style="display:inline">
-											<button class="button is-small" type="submit">
-												@icons.Star()
-												{ i18n.T(ctx, "periods.set_default") }
+								<th>{ i18n.T(ctx, "periods.name") }</th>
+								<th class="has-text-right"></th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, p := range periods {
+								<tr>
+									<td>
+										{ p.Name }
+										if p.IsDefault {
+											<span class="tag is-primary is-light ml-2">{ i18n.T(ctx, "periods.default") }</span>
+										}
+									</td>
+									<td class="has-text-right">
+										if !p.IsDefault {
+											<form method="post" action={ templ.URL("/periods/" + itoa(p.ID) + "/default") } style="display:inline">
+												<button class="button is-small" type="submit">
+													@icons.Star()
+													{ i18n.T(ctx, "periods.set_default") }
+												</button>
+											</form>
+										}
+										<a class="button is-small" href={ templ.URL("/periods/" + itoa(p.ID) + "/edit") }>
+											@icons.Pencil()
+											{ i18n.T(ctx, "periods.rename") }
+										</a>
+										<form method="post" action={ templ.URL("/periods/" + itoa(p.ID) + "/delete") } style="display:inline">
+											<button class="button is-small is-danger" type="submit">
+												@icons.Trash2()
+												{ i18n.T(ctx, "periods.delete") }
 											</button>
 										</form>
-									}
-									<a class="button is-small" href={ templ.URL("/periods/" + itoa(p.ID) + "/edit") }>
-										@icons.Pencil()
-										{ i18n.T(ctx, "periods.rename") }
-									</a>
-									<form method="post" action={ templ.URL("/periods/" + itoa(p.ID) + "/delete") } style="display:inline">
-										<button class="button is-small is-danger" type="submit">
-											@icons.Trash2()
-											{ i18n.T(ctx, "periods.delete") }
-										</button>
-									</form>
-								</td>
-							</tr>
-						}
-					</tbody>
-				</table>
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
 			</div>
 		</section>
 	}

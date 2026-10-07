@@ -44,7 +44,7 @@ templ TimeEntries(view TimeView) {
 		<section class="section">
 			<div class="container">
 				<h1 class="title">{ i18n.T(ctx, "time.title") }</h1>
-				<form method="get" action="/time" class="field is-grouped is-align-items-flex-end mb-4">
+				<form method="get" action="/time" class="field is-grouped is-grouped-multiline is-align-items-flex-end mb-4">
 					<div class="field mb-0 mr-2">
 						<label class="label">{ i18n.T(ctx, "time.from") }</label>
 						<div class="control">
@@ -104,34 +104,36 @@ templ TimeEntries(view TimeView) {
 				}
 				for _, m := range view.Months {
 					<h2 class="subtitle is-4">{ monthLabel(ctx, m.Month, m.Year) }</h2>
-					<table class="table is-fullwidth is-hoverable">
-						<thead>
-							<tr>
-								<th>{ i18n.T(ctx, "time.col_date") }</th>
-								<th>{ i18n.T(ctx, "time.col_hours") }</th>
-								<th>{ i18n.T(ctx, "time.col_target") }</th>
-								<th>{ i18n.T(ctx, "time.col_diff") }</th>
-							</tr>
-						</thead>
-						<tbody>
-							for _, d := range m.Days {
-								<tr class={ templ.KV("is-on-target", d.Diff == 0) }>
-									<td>{ d.Date.Format("02/01/2006") }</td>
-									<td>{ formatHours(d.Hours) }</td>
-									<td>{ formatHours(d.Target) }</td>
-									<td class={ diffClass(d.Diff) }>{ formatDiff(d.Diff) }</td>
+					<div class="table-container">
+						<table class="table is-fullwidth is-hoverable">
+							<thead>
+								<tr>
+									<th>{ i18n.T(ctx, "time.col_date") }</th>
+									<th>{ i18n.T(ctx, "time.col_hours") }</th>
+									<th>{ i18n.T(ctx, "time.col_target") }</th>
+									<th>{ i18n.T(ctx, "time.col_diff") }</th>
 								</tr>
-							}
-						</tbody>
-						<tfoot>
-							<tr>
-								<th>{ i18n.T(ctx, "time.total") }</th>
-								<th>{ formatHours(m.Hours) }</th>
-								<th>{ formatHours(m.Target) }</th>
-								<th class={ diffClass(m.Diff) }>{ formatDiff(m.Diff) }</th>
-							</tr>
-						</tfoot>
-					</table>
+							</thead>
+							<tbody>
+								for _, d := range m.Days {
+									<tr class={ templ.KV("is-on-target", d.Diff == 0) }>
+										<td>{ d.Date.Format("02/01/2006") }</td>
+										<td>{ formatHours(d.Hours) }</td>
+										<td>{ formatHours(d.Target) }</td>
+										<td class={ diffClass(d.Diff) }>{ formatDiff(d.Diff) }</td>
+									</tr>
+								}
+							</tbody>
+							<tfoot>
+								<tr>
+									<th>{ i18n.T(ctx, "time.total") }</th>
+									<th>{ formatHours(m.Hours) }</th>
+									<th>{ formatHours(m.Target) }</th>
+									<th class={ diffClass(m.Diff) }>{ formatDiff(m.Diff) }</th>
+								</tr>
+							</tfoot>
+						</table>
+					</div>
 				}
 				<script src="/static/js/time-filter.js"></script>
 			</div>

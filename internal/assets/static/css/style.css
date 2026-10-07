@@ -19,3 +19,44 @@
 .table td.has-text-right > form:not(:first-child) {
 	margin-left: 0.5rem;
 }
+
+.task-form-hours {
+	width: 6em;
+}
+
+/* Add-task form on phones: one control per row, except a narrow hours field
+   and the date which share a row, and the Add button takes the full width. */
+@media screen and (max-width: 768px) {
+	.task-form-fields {
+		gap: 0 0.75rem;
+	}
+
+	.field.task-form-fields > .control,
+	.field.task-form-fields > .control:not(:last-child) {
+		flex: 0 0 100%;
+		margin-right: 0;
+	}
+
+	.field.task-form-fields > .control.task-form-half {
+		flex: 1 1 0;
+		min-width: 0;
+	}
+
+	.field.task-form-fields > .control.task-form-narrow {
+		flex: 0 0 6em;
+	}
+
+	.task-form-half .input {
+		min-width: 0;
+		width: 100%;
+		font-size: 0.875rem;
+		padding-left: 0.5em;
+		padding-right: 0.25em;
+	}
+
+	.task-form-fields .select,
+	.task-form-fields .select select,
+	.task-form-fields .button {
+		width: 100%;
+	}
+}

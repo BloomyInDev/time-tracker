@@ -18,7 +18,7 @@ templ EditTaskType(taskType models.TaskType) {
 							<input class="input" type="text" name="name" value={ taskType.Name } required/>
 						</div>
 					</div>
-					<div class="field is-grouped">
+					<div class="field is-grouped is-grouped-multiline">
 						<div class="control">
 							<button class="button is-primary" type="submit" data-click-on="ctrl+s">
 								@icons.Save()
@@ -53,33 +53,35 @@ templ TaskTypes(types []models.TaskType) {
 						</div>
 					</div>
 				</form>
-				<table class="table is-fullwidth is-hoverable">
-					<thead>
-						<tr>
-							<th>{ i18n.T(ctx, "task_types.name") }</th>
-							<th class="has-text-right"></th>
-						</tr>
-					</thead>
-					<tbody>
-						for _, t := range types {
+				<div class="table-container">
+					<table class="table is-fullwidth is-hoverable">
+						<thead>
 							<tr>
-								<td>{ t.Name }</td>
-								<td class="has-text-right">
-									<a class="button is-small" href={ templ.URL("/task-types/" + itoa(t.ID) + "/edit") }>
-										@icons.Pencil()
-										{ i18n.T(ctx, "task_types.rename") }
-									</a>
-									<form method="post" action={ templ.URL("/task-types/" + itoa(t.ID) + "/delete") } style="display:inline">
-										<button class="button is-small is-danger" type="submit">
-											@icons.Trash2()
-											{ i18n.T(ctx, "task_types.delete") }
-										</button>
-									</form>
-								</td>
+								<th>{ i18n.T(ctx, "task_types.name") }</th>
+								<th class="has-text-right"></th>
 							</tr>
-						}
-					</tbody>
-				</table>
+						</thead>
+						<tbody>
+							for _, t := range types {
+								<tr>
+									<td>{ t.Name }</td>
+									<td class="has-text-right">
+										<a class="button is-small" href={ templ.URL("/task-types/" + itoa(t.ID) + "/edit") }>
+											@icons.Pencil()
+											{ i18n.T(ctx, "task_types.rename") }
+										</a>
+										<form method="post" action={ templ.URL("/task-types/" + itoa(t.ID) + "/delete") } style="display:inline">
+											<button class="button is-small is-danger" type="submit">
+												@icons.Trash2()
+												{ i18n.T(ctx, "task_types.delete") }
+											</button>
+										</form>
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
 			</div>
 		</section>
 	}

@@ -59,42 +59,44 @@ templ Clients(clients []models.Client) {
 						</span>
 					</div>
 				</div>
-				<table class="table is-fullwidth is-hoverable">
-					<thead>
-						<tr>
-							<th>{ i18n.T(ctx, "clients.name") }</th>
-							<th class="has-text-right"></th>
-						</tr>
-					</thead>
-					<tbody id="client-rows">
-						for _, c := range clients {
-							<tr data-name={ strings.ToLower(c.Name) }>
-								<td>
-									{ c.Name }
-									if c.IsArchived {
-										<span class="tag is-warning ml-2">{ i18n.T(ctx, "clients.archived") }</span>
-									}
-								</td>
-								<td class="has-text-right">
-									<a class="button is-small" href={ templ.URL("/clients/" + itoa(c.ID)) }>
-										@icons.Eye()
-										{ i18n.T(ctx, "clients.details") }
-									</a>
-									<a class="button is-small" href={ templ.URL("/clients/" + itoa(c.ID) + "/edit") }>
-										@icons.Pencil()
-										{ i18n.T(ctx, "clients.edit") }
-									</a>
-									<form method="post" action={ templ.URL("/clients/" + itoa(c.ID) + "/delete") } style="display:inline">
-										<button class="button is-small is-danger" type="submit">
-											@icons.Trash2()
-											{ i18n.T(ctx, "clients.delete") }
-										</button>
-									</form>
-								</td>
+				<div class="table-container">
+					<table class="table is-fullwidth is-hoverable">
+						<thead>
+							<tr>
+								<th>{ i18n.T(ctx, "clients.name") }</th>
+								<th class="has-text-right"></th>
 							</tr>
-						}
-					</tbody>
-				</table>
+						</thead>
+						<tbody id="client-rows">
+							for _, c := range clients {
+								<tr data-name={ strings.ToLower(c.Name) }>
+									<td>
+										{ c.Name }
+										if c.IsArchived {
+											<span class="tag is-warning ml-2">{ i18n.T(ctx, "clients.archived") }</span>
+										}
+									</td>
+									<td class="has-text-right">
+										<a class="button is-small" href={ templ.URL("/clients/" + itoa(c.ID)) }>
+											@icons.Eye()
+											{ i18n.T(ctx, "clients.details") }
+										</a>
+										<a class="button is-small" href={ templ.URL("/clients/" + itoa(c.ID) + "/edit") }>
+											@icons.Pencil()
+											{ i18n.T(ctx, "clients.edit") }
+										</a>
+										<form method="post" action={ templ.URL("/clients/" + itoa(c.ID) + "/delete") } style="display:inline">
+											<button class="button is-small is-danger" type="submit">
+												@icons.Trash2()
+												{ i18n.T(ctx, "clients.delete") }
+											</button>
+										</form>
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
 			</div>
 		</section>
 		<script src="/static/js/client-filter.js"></script>
@@ -133,7 +135,7 @@ templ EditClient(client models.Client, taskTypes []TaskTypeChoice) {
 							</div>
 						}
 					</div>
-					<div class="field is-grouped">
+					<div class="field is-grouped is-grouped-multiline">
 						<div class="control">
 							<button class="button is-primary" type="submit" data-click-on="ctrl+s">
 								@icons.Save()
@@ -267,7 +269,7 @@ templ ClientDetail(client models.Client, tasks []models.Task, totalHours float64
 					}
 				</h1>
 				<h2 class="subtitle">{ i18n.T(ctx, "clients.hours_logged", i18n.M{"hours": formatHours(totalHours)}) }</h2>
-				<div class="field is-grouped mb-4">
+				<div class="field is-grouped is-grouped-multiline mb-4">
 					<div class="control">
 						<a class="button is-link" href={ templ.SafeURL("/clients/" + itoa(client.ID) + "/report?period_id=" + itoa(selectedPeriodID) + "&task_type_id=" + itoa(selectedTaskTypeID)) } target="_blank">
 							{ i18n.T(ctx, "clients.export_pdf") }
@@ -287,7 +289,7 @@ templ ClientDetail(client models.Client, tasks []models.Task, totalHours float64
 				</div>
 				if len(periods) > 0 || len(filterTypes) > 0 {
 					<form method="get" class="box">
-						<div class="field is-grouped">
+						<div class="field is-grouped is-grouped-multiline">
 							if len(periods) > 0 {
 								<div class="control">
 									<label class="label">{ i18n.T(ctx, "clients.filter_by_period") }</label>
@@ -318,47 +320,51 @@ templ ClientDetail(client models.Client, tasks []models.Task, totalHours float64
 					</form>
 				}
 				if len(hoursByType) > 0 {
-					<table class="table is-fullwidth is-narrow">
+					<div class="table-container">
+						<table class="table is-fullwidth is-narrow">
+							<thead>
+								<tr>
+									<th>{ i18n.T(ctx, "clients.col_task_type") }</th>
+									<th>{ i18n.T(ctx, "clients.col_hours") }</th>
+								</tr>
+							</thead>
+							<tbody>
+								for _, t := range allTypes {
+									if h, ok := hoursByType[t.ID]; ok {
+										<tr>
+											<td>{ t.Name }</td>
+											<td>{ formatHours(h) }</td>
+										</tr>
+									}
+								}
+							</tbody>
+						</table>
+					</div>
+				}
+				<div class="table-container">
+					<table class="table is-fullwidth is-hoverable">
 						<thead>
 							<tr>
+								<th>{ i18n.T(ctx, "clients.col_title") }</th>
 								<th>{ i18n.T(ctx, "clients.col_task_type") }</th>
+								<th>{ i18n.T(ctx, "clients.col_period") }</th>
 								<th>{ i18n.T(ctx, "clients.col_hours") }</th>
+								<th>{ i18n.T(ctx, "clients.col_date") }</th>
 							</tr>
 						</thead>
 						<tbody>
-							for _, t := range allTypes {
-								if h, ok := hoursByType[t.ID]; ok {
-									<tr>
-										<td>{ t.Name }</td>
-										<td>{ formatHours(h) }</td>
-									</tr>
-								}
+							for _, t := range tasks {
+								<tr>
+									<td>{ t.Title }</td>
+									<td>{ taskTypeName(allTypes, t.TaskTypeID) }</td>
+									<td>{ periodName(periods, t.PeriodID) }</td>
+									<td>{ formatHours(t.HoursSpent) }</td>
+									<td>{ t.Date.Format("02/01/2006") }</td>
+								</tr>
 							}
 						</tbody>
 					</table>
-				}
-				<table class="table is-fullwidth is-hoverable">
-					<thead>
-						<tr>
-							<th>{ i18n.T(ctx, "clients.col_title") }</th>
-							<th>{ i18n.T(ctx, "clients.col_task_type") }</th>
-							<th>{ i18n.T(ctx, "clients.col_period") }</th>
-							<th>{ i18n.T(ctx, "clients.col_hours") }</th>
-							<th>{ i18n.T(ctx, "clients.col_date") }</th>
-						</tr>
-					</thead>
-					<tbody>
-						for _, t := range tasks {
-							<tr>
-								<td>{ t.Title }</td>
-								<td>{ taskTypeName(allTypes, t.TaskTypeID) }</td>
-								<td>{ periodName(periods, t.PeriodID) }</td>
-								<td>{ formatHours(t.HoursSpent) }</td>
-								<td>{ t.Date.Format("02/01/2006") }</td>
-							</tr>
-						}
-					</tbody>
-				</table>
+				</div>
 			</div>
 		</section>
 	}
