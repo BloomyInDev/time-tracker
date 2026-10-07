@@ -75,7 +75,7 @@ templ Tasks(clients []models.Client, types []models.TaskType, initialTypes []mod
 							<input class="input" type="date" name="date" value={ today }/>
 						</div>
 						<div class="control">
-							<button class="button is-primary" type="submit">
+							<button class="button is-primary" type="submit" data-click-on="ctrl+enter">
 								@icons.Plus()
 								{ i18n.T(ctx, "tasks.add") }
 							</button>
