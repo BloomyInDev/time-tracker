@@ -28,6 +28,9 @@ binary, so a deployment is one file. That same binary runs the web server
   - `/clients/{id}/report` produces a per-client report: a summary table of
     hours per task type, followed by one detail table per task type, honoring
     the active filters.
+- **CSV export:** `/time/report.csv` and `/clients/{id}/report.csv` return the
+  same data as the reports, `;`-separated with decimal commas so they open
+  directly in Excel or LibreOffice with a French locale.
 - **Bilingual:** English and French (`/lang/en`, `/lang/fr`).
 - **Authentication:** email and password login backed by opaque, server-side
   session tokens stored in a cookie. Sessions live in memory, so they are lost
