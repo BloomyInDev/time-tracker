@@ -10,6 +10,7 @@ import (
 	"github.com/bloomyindev/time-tracker/internal/models"
 	"github.com/bloomyindev/time-tracker/internal/templates"
 	"github.com/go-chi/chi/v5"
+	"github.com/invopop/ctxi18n/i18n"
 )
 
 func (h *Handlers) ClientsRouter() chi.Router {
@@ -18,6 +19,7 @@ func (h *Handlers) ClientsRouter() chi.Router {
 	r.Post("/", h.createClient)
 	r.Get("/{id}", h.clientDetail)
 	r.Get("/{id}/report", h.clientReport)
+	r.Get("/{id}/report.csv", h.clientReportCSV)
 	r.Get("/{id}/edit", h.editClientForm)
 	r.Post("/{id}/edit", h.updateClient)
 	r.Post("/{id}/delete", h.deleteClient)
@@ -268,46 +270,68 @@ func clientFilterID(r *http.Request, key string) (int64, error) {
 	return strconv.ParseInt(raw, 10, 64)
 }
 
-// clientReport renders a print-friendly page for a client: the total hours on
-// top, then one table per task type ("project"), honoring the active
-// period/task-type filters.
-func (h *Handlers) clientReport(w http.ResponseWriter, r *http.Request) {
+// clientReportData is what both report formats of a client are built from.
+type clientReportData struct {
+	client     models.Client
+	tasks      []models.Task
+	allTypes   []models.TaskType
+	periods    []models.Period
+	periodID   int64
+	taskTypeID int64
+}
+
+// loadClientReport reads the client and its tasks under the active
+// period/task-type filters. It writes its own error response and reports
+// false on failure.
+func (h *Handlers) loadClientReport(w http.ResponseWriter, r *http.Request) (clientReportData, bool) {
+	var d clientReportData
 	id, ok := pathID(w, r)
 	if !ok {
-		return
+		return d, false
 	}
 	client, err := db.GetClient(h.DB, userID(r), id)
 	if err != nil {
 		http.Error(w, "client not found", http.StatusNotFound)
-		return
+		return d, false
 	}
+	d.client = client
 
-	periodID, err := clientFilterID(r, "period_id")
+	d.periodID, err = clientFilterID(r, "period_id")
 	if err != nil {
 		http.Error(w, "invalid period_id", http.StatusBadRequest)
-		return
+		return d, false
 	}
-	taskTypeID, err := clientFilterID(r, "task_type_id")
+	d.taskTypeID, err = clientFilterID(r, "task_type_id")
 	if err != nil {
 		http.Error(w, "invalid task_type_id", http.StatusBadRequest)
-		return
+		return d, false
 	}
 
-	tasks, err := db.ListTasksByClientFiltered(h.DB, userID(r), id, periodID, taskTypeID)
-	if err != nil {
+	if d.tasks, err = db.ListTasksByClientFiltered(h.DB, userID(r), id, d.periodID, d.taskTypeID); err != nil {
 		fail(w, err)
+		return d, false
+	}
+	if d.allTypes, err = db.ListTaskTypes(h.DB, userID(r)); err != nil {
+		fail(w, err)
+		return d, false
+	}
+	if d.periods, err = db.ListPeriods(h.DB, userID(r)); err != nil {
+		fail(w, err)
+		return d, false
+	}
+	return d, true
+}
+
+// clientReport renders a print-friendly page for a client: the total hours on
+// top, then one table per task type ("project"), honoring the active
+// period/task-type filters.
+func (h *Handlers) clientReport(w http.ResponseWriter, r *http.Request) {
+	d, ok := h.loadClientReport(w, r)
+	if !ok {
 		return
 	}
-	allTypes, err := db.ListTaskTypes(h.DB, userID(r))
-	if err != nil {
-		fail(w, err)
-		return
-	}
-	periods, err := db.ListPeriods(h.DB, userID(r))
-	if err != nil {
-		fail(w, err)
-		return
-	}
+	client, tasks, allTypes, periods := d.client, d.tasks, d.allTypes, d.periods
+	periodID, taskTypeID := d.periodID, d.taskTypeID
 
 	// One table per task type, in the app's task-type order, keeping
 	// only types that actually have tasks in the filtered set.
@@ -352,4 +376,40 @@ func (h *Handlers) clientReport(w http.ResponseWriter, r *http.Request) {
 		Periods:      periods,
 	}
 	templates.ClientReport(view).Render(r.Context(), w)
+}
+
+// clientReportCSV exports the filtered tasks of a client, one row per task,
+// with the same period/task-type filters as clientReport.
+func (h *Handlers) clientReportCSV(w http.ResponseWriter, r *http.Request) {
+	d, ok := h.loadClientReport(w, r)
+	if !ok {
+		return
+	}
+	typeNames := make(map[int64]string, len(d.allTypes))
+	for _, tt := range d.allTypes {
+		typeNames[tt.ID] = tt.Name
+	}
+	periodNames := make(map[int64]string, len(d.periods))
+	for _, p := range d.periods {
+		periodNames[p.ID] = p.Name
+	}
+
+	ctx := r.Context()
+	rows := [][]string{{
+		i18n.T(ctx, "clients.col_date"),
+		i18n.T(ctx, "clients.col_title"),
+		i18n.T(ctx, "clients.col_task_type"),
+		i18n.T(ctx, "clients.col_period"),
+		i18n.T(ctx, "clients.col_hours"),
+	}}
+	for _, t := range d.tasks {
+		rows = append(rows, []string{
+			t.Date.Format("2006-01-02"),
+			csvText(t.Title),
+			csvText(typeNames[t.TaskTypeID]),
+			csvText(periodNames[t.PeriodID]),
+			csvHours(t.HoursSpent),
+		})
+	}
+	writeCSV(w, "client-"+strconv.FormatInt(d.client.ID, 10)+".csv", rows)
 }

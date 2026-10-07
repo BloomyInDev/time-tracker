@@ -274,6 +274,11 @@ templ ClientDetail(client models.Client, tasks []models.Task, totalHours float64
 						</a>
 					</div>
 					<div class="control">
+						<a class="button is-link is-light" href={ templ.SafeURL("/clients/" + itoa(client.ID) + "/report.csv?period_id=" + itoa(selectedPeriodID) + "&task_type_id=" + itoa(selectedTaskTypeID)) }>
+							{ i18n.T(ctx, "clients.export_csv") }
+						</a>
+					</div>
+					<div class="control">
 						<a class="button" href={ templ.URL("/clients/" + itoa(client.ID) + "/edit") }>
 							@icons.Pencil()
 							{ i18n.T(ctx, "clients.edit") }

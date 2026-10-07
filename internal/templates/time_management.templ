@@ -65,7 +65,10 @@ templ TimeEntries(view TimeView) {
 							<a class="button" href="/time">{ i18n.T(ctx, "time.reset") }</a>
 						</div>
 						<div class="control">
-							<a id="export-link" class="button is-link" href={ templ.SafeURL("/time/report?from=" + view.From + "&to=" + view.To) } target="_blank">{ i18n.T(ctx, "time.export_pdf") }</a>
+							<a data-export-link class="button is-link" href={ templ.SafeURL("/time/report?from=" + view.From + "&to=" + view.To) } target="_blank">{ i18n.T(ctx, "time.export_pdf") }</a>
+						</div>
+						<div class="control">
+							<a data-export-link class="button is-link is-light" href={ templ.SafeURL("/time/report.csv?from=" + view.From + "&to=" + view.To) }>{ i18n.T(ctx, "time.export_csv") }</a>
 						</div>
 					}
 				</form>

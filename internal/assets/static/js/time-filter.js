@@ -1,17 +1,17 @@
 // Hide days that hit their target exactly; the "show all" checkbox reveals
-// them and, in the same move, tells the PDF export to include them too.
+// them and, in the same move, tells the PDF and CSV exports to include them too.
 (function () {
 	const toggle = document.getElementById("show-on-target");
 	if (!toggle) return;
 
 	const rows = document.querySelectorAll("tr.is-on-target");
-	const link = document.getElementById("export-link");
+	const links = document.querySelectorAll("[data-export-link]");
 
 	function apply() {
 		for (const row of rows) {
 			row.style.display = toggle.checked ? "" : "none";
 		}
-		if (link) {
+		for (const link of links) {
 			const url = new URL(link.href, location.origin);
 			if (toggle.checked) {
 				url.searchParams.set("all", "1");

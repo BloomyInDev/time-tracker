@@ -8,12 +8,14 @@ import (
 	"github.com/bloomyindev/time-tracker/internal/db"
 	"github.com/bloomyindev/time-tracker/internal/templates"
 	"github.com/go-chi/chi/v5"
+	"github.com/invopop/ctxi18n/i18n"
 )
 
 func (h *Handlers) TimeRouter() chi.Router {
 	r := chi.NewRouter()
 	r.Get("/", h.listTimeEntries)
 	r.Get("/report", h.timeReport)
+	r.Get("/report.csv", h.timeReportCSV)
 	return r
 }
 
@@ -139,4 +141,35 @@ func (h *Handlers) timeReport(w http.ResponseWriter, r *http.Request) {
 	// the days that hit their target exactly.
 	includeOnTarget := r.URL.Query().Get("all") == "1"
 	templates.TimeReport(view, includeOnTarget).Render(r.Context(), w)
+}
+
+// timeReportCSV exports the same day-by-day breakdown as timeReport, with
+// the same all=1 switch for on-target days.
+func (h *Handlers) timeReportCSV(w http.ResponseWriter, r *http.Request) {
+	view, err := buildTimeView(h.DB, userID(r), r.URL.Query().Get("from"), r.URL.Query().Get("to"))
+	if err != nil {
+		fail(w, err)
+		return
+	}
+	includeOnTarget := r.URL.Query().Get("all") == "1"
+	ctx := r.Context()
+	rows := [][]string{{
+		i18n.T(ctx, "time.col_date"),
+		i18n.T(ctx, "time.col_hours"),
+		i18n.T(ctx, "time.col_target"),
+		i18n.T(ctx, "time.col_diff"),
+	}}
+	for _, m := range view.Months {
+		for _, d := range m.Days {
+			if includeOnTarget || d.Diff != 0 {
+				rows = append(rows, []string{
+					d.Date.Format("2006-01-02"),
+					csvHours(d.Hours),
+					csvHours(d.Target),
+					csvHours(d.Diff),
+				})
+			}
+		}
+	}
+	writeCSV(w, "time-report.csv", rows)
 }
