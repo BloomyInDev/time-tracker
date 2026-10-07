@@ -5,7 +5,7 @@ tmp_dir = "tmp"
   cmd = "go build -o ./tmp/time-tracker ./cmd/time-tracker"
   entrypoint = "./tmp/time-tracker"
   args_bin = ["serve"]
-  include_ext = ["go"]
+  include_ext = ["go", "css", "js"]
   exclude_dir = ["tmp", "bin"]
   delay = 100
 
