@@ -32,6 +32,10 @@ binary, so a deployment is one file. That same binary runs the web server
   same data as the reports, `;`-separated with decimal commas so they open
   directly in Excel or LibreOffice with a French locale.
 - **Bilingual:** English and French (`/lang/en`, `/lang/fr`).
+- **Vocabulary presets:** each user picks, under *My account*, the wording of
+  the UI. `Projects` renames Clients as Projects, `Clients` is the default.
+  A preset is a `presets.<name>` block in `internal/i18n/locales/*.yml` that
+  lists only the keys it renames, plus its name in `i18n.Presets`.
 - **Authentication:** email and password login backed by opaque, server-side
   session tokens stored in a cookie. Sessions live in memory, so they are lost
   on restart and can be revoked instantly.
