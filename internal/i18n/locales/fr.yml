@@ -2,7 +2,6 @@ fr:
   nav:
     brand: "Time Tracker"
     time: "Temps"
-    clients: "Clients"
     task_types: "Types de tâches"
     tasks: "Tâches"
     periods: "Périodes"
@@ -16,12 +15,9 @@ fr:
     invalid_credentials: "Identifiants invalides"
     something_went_wrong: "Une erreur est survenue"
   clients:
-    title: "Clients"
-    name_placeholder: "Nom du client"
     add: "Ajouter"
     name: "Nom"
     details: "Détails"
-    edit_title: "Modifier le client"
     cancel: "Annuler"
     delete: "Supprimer"
     hours_logged: "%{hours} heures enregistrées au total"
@@ -30,7 +26,6 @@ fr:
     col_hours: "Heures"
     col_date: "Date"
     col_task_type: "Type de tâche"
-    task_types_allowed: "Types de tâches autorisés pour ce client"
     filter_by_period: "Filtrer par période"
     all_periods: "Toutes les périodes"
     filter_by_task_type: "Filtrer par type de tâche"
@@ -38,14 +33,11 @@ fr:
     save: "Enregistrer"
     export_csv: "Exporter en CSV"
     export_pdf: "Exporter en PDF"
-    report_title: "Rapport client"
     total: "Total"
     period: "Période"
     task_type: "Type de tâche"
-    search_placeholder: "Rechercher des clients..."
     archived: "Archivé"
     edit: "Modifier"
-    archived_help: "Un client archivé garde son historique mais n'accepte plus de nouvelles tâches."
   task_types:
     title: "Types de tâches"
     name_placeholder: "Nom du type de tâche"
@@ -105,7 +97,6 @@ fr:
     add: "Ajouter"
     show_future: "Afficher les prochains jours"
     col_title: "Titre"
-    col_client: "Client"
     col_task_type: "Type de tâche"
     col_period: "Période"
     col_hours: "Heures"
@@ -113,7 +104,6 @@ fr:
     delete: "Supprimer"
     edit_title: "Modifier la tâche"
     label_title: "Titre"
-    label_client: "Client"
     label_task_type: "Type de tâche"
     label_period: "Période"
     label_hours: "Heures passées"
@@ -132,6 +122,9 @@ fr:
     time_saved: "Réglages du suivi du temps mis à jour"
     time_start_date: "Date de début par défaut de la page temps"
     time_start_date_help: "Laisser vide pour commencer au 1er janvier de l'année en cours."
+    vocabulary: "Vocabulaire"
+    vocabulary_help: "Renomme les clients dans toute l'application, par exemple en projets."
+    vocabulary_saved: "Vocabulaire mis à jour"
     monday: "Lundi"
     tuesday: "Mardi"
     wednesday: "Mercredi"
@@ -139,3 +132,38 @@ fr:
     friday: "Vendredi"
     saturday: "Samedi"
     sunday: "Dimanche"
+  # Presets de vocabulaire. Les clés qu'un preset peut renommer vivent ici
+  # uniquement, sous presets.<nom>.<clé>. "default" les contient toutes ; les
+  # autres presets listent seulement celles qu'ils renomment et retombent sur
+  # "default" pour le reste.
+  presets:
+    default:
+      name: "Clients (par défaut)"
+      nav:
+        clients: "Clients"
+      clients:
+        title: "Clients"
+        name_placeholder: "Nom du client"
+        edit_title: "Modifier le client"
+        task_types_allowed: "Types de tâches autorisés pour ce client"
+        report_title: "Rapport client"
+        search_placeholder: "Rechercher des clients..."
+        archived_help: "Un client archivé garde son historique mais n'accepte plus de nouvelles tâches."
+      tasks:
+        col_client: "Client"
+        label_client: "Client"
+    projects:
+      name: "Projets"
+      nav:
+        clients: "Projets"
+      clients:
+        title: "Projets"
+        name_placeholder: "Nom du projet"
+        edit_title: "Modifier le projet"
+        task_types_allowed: "Types de tâches autorisés pour ce projet"
+        report_title: "Rapport projet"
+        search_placeholder: "Rechercher des projets..."
+        archived_help: "Un projet archivé garde son historique mais n'accepte plus de nouvelles tâches."
+      tasks:
+        col_client: "Projet"
+        label_client: "Projet"

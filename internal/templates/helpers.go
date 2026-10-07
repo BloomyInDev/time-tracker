@@ -5,9 +5,16 @@ import (
 	"strconv"
 	"time"
 
+	appi18n "github.com/bloomyindev/time-tracker/internal/i18n"
 	"github.com/bloomyindev/time-tracker/internal/models"
 	"github.com/invopop/ctxi18n/i18n"
 )
+
+// vocab translates a key the user's vocabulary preset may rename (clients
+// vs projects), as opposed to i18n.T for fixed wording.
+func vocab(ctx context.Context, key string) string {
+	return appi18n.Vocab(ctx, key)
+}
 
 // weekdayLabels returns the localized weekday names, index 0 = Monday ..
 // 6 = Sunday, matching models.User.DailyHours ordering.

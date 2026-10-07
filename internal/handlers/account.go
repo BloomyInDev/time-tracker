@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/bloomyindev/time-tracker/internal/db"
+	appi18n "github.com/bloomyindev/time-tracker/internal/i18n"
 	"github.com/bloomyindev/time-tracker/internal/service/auth"
 	"github.com/bloomyindev/time-tracker/internal/templates"
 	"github.com/go-chi/chi/v5"
@@ -17,6 +18,7 @@ func (h *Handlers) AccountRouter() chi.Router {
 	r := chi.NewRouter()
 	r.Get("/", h.account)
 	r.Post("/hours", h.updateTimeSettings)
+	r.Post("/vocabulary", h.updateVocabulary)
 	r.Post("/password", h.changePassword)
 	return r
 }
@@ -69,6 +71,31 @@ func (h *Handlers) updateTimeSettings(w http.ResponseWriter, r *http.Request) {
 	user.DailyHours = hours
 	user.TimeStartDate = startDate
 	templates.Account(user, "", i18n.T(r.Context(), "account.time_saved")).Render(r.Context(), w)
+}
+
+func (h *Handlers) updateVocabulary(w http.ResponseWriter, r *http.Request) {
+	user, err := db.GetUser(h.DB, userID(r))
+	if err != nil {
+		fail(w, err)
+		return
+	}
+	if !parseForm(w, r) {
+		return
+	}
+
+	name := r.FormValue("vocabulary")
+	if !appi18n.IsPreset(name) {
+		http.Error(w, "unknown vocabulary", http.StatusBadRequest)
+		return
+	}
+	if err := db.UpdateVocabulary(h.DB, userID(r), name); err != nil {
+		fail(w, err)
+		return
+	}
+	user.Vocabulary = name
+	// Render under the new preset: the context still carries the old one.
+	ctx := appi18n.WithPreset(r.Context(), name)
+	templates.Account(user, "", i18n.T(ctx, "account.vocabulary_saved")).Render(ctx, w)
 }
 
 func (h *Handlers) changePassword(w http.ResponseWriter, r *http.Request) {

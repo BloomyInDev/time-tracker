@@ -34,14 +34,14 @@ type TaskTypeChoice struct {
 }
 
 templ Clients(clients []models.Client) {
-	@Layout(i18n.T(ctx, "clients.title")) {
+	@Layout(vocab(ctx, "clients.title")) {
 		<section class="section">
 			<div class="container">
-				<h1 class="title">{ i18n.T(ctx, "clients.title") }</h1>
+				<h1 class="title">{ vocab(ctx, "clients.title") }</h1>
 				<form method="post" action="/clients" class="box">
 					<div class="field has-addons">
 						<div class="control is-expanded">
-							<input class="input" type="text" name="name" placeholder={ i18n.T(ctx, "clients.name_placeholder") } required/>
+							<input class="input" type="text" name="name" placeholder={ vocab(ctx, "clients.name_placeholder") } required/>
 						</div>
 						<div class="control">
 							<button class="button is-primary" type="submit">
@@ -53,7 +53,7 @@ templ Clients(clients []models.Client) {
 				</form>
 				<div class="field">
 					<div class="control has-icons-left">
-						<input id="client-search" class="input" type="search" placeholder={ i18n.T(ctx, "clients.search_placeholder") }/>
+						<input id="client-search" class="input" type="search" placeholder={ vocab(ctx, "clients.search_placeholder") }/>
 						<span class="icon is-left">
 							@icons.Search()
 						</span>
@@ -104,10 +104,10 @@ templ Clients(clients []models.Client) {
 // EditClient is the single page holding everything editable about a
 // client: name, archived state and allowed task types.
 templ EditClient(client models.Client, taskTypes []TaskTypeChoice) {
-	@Layout(i18n.T(ctx, "clients.edit_title")) {
+	@Layout(vocab(ctx, "clients.edit_title")) {
 		<section class="section">
 			<div class="container">
-				<h1 class="title">{ i18n.T(ctx, "clients.edit_title") }</h1>
+				<h1 class="title">{ vocab(ctx, "clients.edit_title") }</h1>
 				<form method="post" action={ templ.URL("/clients/" + itoa(client.ID) + "/edit") } class="box">
 					<div class="field">
 						<label class="label">{ i18n.T(ctx, "clients.name") }</label>
@@ -120,10 +120,10 @@ templ EditClient(client models.Client, taskTypes []TaskTypeChoice) {
 							<input type="checkbox" name="is_archived" value="1" checked?={ client.IsArchived }/>
 							{ i18n.T(ctx, "clients.archived") }
 						</label>
-						<p class="help">{ i18n.T(ctx, "clients.archived_help") }</p>
+						<p class="help">{ vocab(ctx, "clients.archived_help") }</p>
 					</div>
 					<div class="field">
-						<label class="label">{ i18n.T(ctx, "clients.task_types_allowed") }</label>
+						<label class="label">{ vocab(ctx, "clients.task_types_allowed") }</label>
 						for _, choice := range taskTypes {
 							<div class="control">
 								<label class="checkbox">
@@ -157,7 +157,7 @@ templ ClientReport(view ClientReportView) {
 	<html lang={ ctxi18n.Locale(ctx).Code().String() }>
 		<head>
 			<meta charset="utf-8"/>
-			<title>{ i18n.T(ctx, "clients.report_title") }</title>
+			<title>{ vocab(ctx, "clients.report_title") }</title>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<style>
 				body { font-family: system-ui, sans-serif; margin: 2.5rem; color: #111; font-size: 12px; }

@@ -7,13 +7,13 @@ import (
 )
 
 const userColumns = `id, email, password_hash,
-	hours_mon, hours_tue, hours_wed, hours_thu, hours_fri, hours_sat, hours_sun, time_start_date`
+	hours_mon, hours_tue, hours_wed, hours_thu, hours_fri, hours_sat, hours_sun, time_start_date, vocabulary`
 
 func scanUser(row interface{ Scan(...any) error }, u *models.User) error {
 	var start sql.NullString
 	err := row.Scan(&u.ID, &u.Email, &u.PasswordHash,
 		&u.DailyHours[0], &u.DailyHours[1], &u.DailyHours[2], &u.DailyHours[3],
-		&u.DailyHours[4], &u.DailyHours[5], &u.DailyHours[6], &start)
+		&u.DailyHours[4], &u.DailyHours[5], &u.DailyHours[6], &start, &u.Vocabulary)
 	u.TimeStartDate = start.String
 	return err
 }
@@ -54,5 +54,12 @@ func UpdateTimeSettings(conn *sql.DB, id int64, hours [7]float64, startDate stri
 		`UPDATE users SET hours_mon = ?, hours_tue = ?, hours_wed = ?, hours_thu = ?, hours_fri = ?, hours_sat = ?, hours_sun = ?, time_start_date = ? WHERE id = ?`,
 		hours[0], hours[1], hours[2], hours[3], hours[4], hours[5], hours[6], start, id,
 	)
+	return err
+}
+
+// UpdateVocabulary saves the wording preset a user picked. The caller
+// validates the name.
+func UpdateVocabulary(conn *sql.DB, id int64, name string) error {
+	_, err := conn.Exec(`UPDATE users SET vocabulary = ? WHERE id = ?`, name, id)
 	return err
 }

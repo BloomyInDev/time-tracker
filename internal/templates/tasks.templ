@@ -92,7 +92,7 @@ templ Tasks(clients []models.Client, types []models.TaskType, initialTypes []mod
 					<thead>
 						<tr>
 							<th>{ i18n.T(ctx, "tasks.col_title") }</th>
-							<th>{ i18n.T(ctx, "tasks.col_client") }</th>
+							<th>{ vocab(ctx, "tasks.col_client") }</th>
 							<th>{ i18n.T(ctx, "tasks.col_task_type") }</th>
 							<th>{ i18n.T(ctx, "tasks.col_period") }</th>
 							<th>{ i18n.T(ctx, "tasks.col_hours") }</th>
@@ -158,7 +158,7 @@ templ EditTask(task models.Task, clients []models.Client, types []models.TaskTyp
 						</div>
 					</div>
 					<div class="field">
-						<label class="label">{ i18n.T(ctx, "tasks.label_client") }</label>
+						<label class="label">{ vocab(ctx, "tasks.label_client") }</label>
 						<div class="control">
 							<div class="select">
 								<select name="client_id" id="task-client-select">

@@ -39,7 +39,7 @@ func (h *Handlers) Router(static fs.FS) http.Handler {
 
 	// Everything below needs a session.
 	r.Group(func(r chi.Router) {
-		r.Use(h.Auth.RequireAuth)
+		r.Use(h.Auth.RequireAuth, h.withVocabulary)
 		r.Mount("/clients", h.ClientsRouter())
 		r.Mount("/task-types", h.TaskTypesRouter())
 		r.Mount("/periods", h.PeriodsRouter())
