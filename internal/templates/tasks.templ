@@ -25,7 +25,7 @@ templ Tasks(clients []models.Client, types []models.TaskType, initialTypes []mod
 					id="task-form"
 					data-client-task-types={ serializeClientTaskTypes(byClient) }
 				>
-					<div class="field is-grouped">
+					<div class="field is-grouped is-grouped-multiline">
 						<div class="control is-expanded">
 							<input class="input" type="text" name="title" placeholder={ i18n.T(ctx, "tasks.title_placeholder") } required/>
 						</div>
@@ -88,48 +88,50 @@ templ Tasks(clients []models.Client, types []models.TaskType, initialTypes []mod
 						{ i18n.T(ctx, "tasks.show_future") }
 					</label>
 				</div>
-				<table class="table is-fullwidth is-hoverable">
-					<thead>
-						<tr>
-							<th>{ i18n.T(ctx, "tasks.col_title") }</th>
-							<th>{ vocab(ctx, "tasks.col_client") }</th>
-							<th>{ i18n.T(ctx, "tasks.col_task_type") }</th>
-							<th>{ i18n.T(ctx, "tasks.col_period") }</th>
-							<th>{ i18n.T(ctx, "tasks.col_hours") }</th>
-							<th class="has-text-right"></th>
-						</tr>
-					</thead>
-					<tbody>
-						for _, day := range days {
-							<tr class={ "day-header", templ.KV("is-future", day.Future) }>
-								<td colspan="4"><strong>{ day.Date }</strong></td>
-								<td><strong>{ formatHours(day.Hours) }</strong></td>
-								<td></td>
+				<div class="table-container">
+					<table class="table is-fullwidth is-hoverable">
+						<thead>
+							<tr>
+								<th>{ i18n.T(ctx, "tasks.col_title") }</th>
+								<th>{ vocab(ctx, "tasks.col_client") }</th>
+								<th>{ i18n.T(ctx, "tasks.col_task_type") }</th>
+								<th>{ i18n.T(ctx, "tasks.col_period") }</th>
+								<th>{ i18n.T(ctx, "tasks.col_hours") }</th>
+								<th class="has-text-right"></th>
 							</tr>
-							for _, t := range day.Tasks {
-								<tr id={ "task-" + itoa(t.ID) } class={ templ.KV("is-future", day.Future) }>
-									<td>{ t.Title }</td>
-									<td>{ clientName(clients, t.ClientID) }</td>
-									<td>{ taskTypeName(types, t.TaskTypeID) }</td>
-									<td>{ periodName(periods, t.PeriodID) }</td>
-									<td>{ formatHours(t.HoursSpent) }</td>
-									<td class="has-text-right">
-										<a class="button is-small" href={ templ.URL("/tasks/" + itoa(t.ID) + "/edit") }>
-											@icons.Pencil()
-											{ i18n.T(ctx, "tasks.edit") }
-										</a>
-										<form method="post" action={ templ.URL("/tasks/" + itoa(t.ID) + "/delete") } style="display:inline">
-											<button class="button is-small is-danger" type="submit">
-												@icons.Trash2()
-												{ i18n.T(ctx, "tasks.delete") }
-											</button>
-										</form>
-									</td>
+						</thead>
+						<tbody>
+							for _, day := range days {
+								<tr class={ "day-header", templ.KV("is-future", day.Future) }>
+									<td colspan="4"><strong>{ day.Date }</strong></td>
+									<td><strong>{ formatHours(day.Hours) }</strong></td>
+									<td></td>
 								</tr>
+								for _, t := range day.Tasks {
+									<tr id={ "task-" + itoa(t.ID) } class={ templ.KV("is-future", day.Future) }>
+										<td>{ t.Title }</td>
+										<td>{ clientName(clients, t.ClientID) }</td>
+										<td>{ taskTypeName(types, t.TaskTypeID) }</td>
+										<td>{ periodName(periods, t.PeriodID) }</td>
+										<td>{ formatHours(t.HoursSpent) }</td>
+										<td class="has-text-right">
+											<a class="button is-small" href={ templ.URL("/tasks/" + itoa(t.ID) + "/edit") }>
+												@icons.Pencil()
+												{ i18n.T(ctx, "tasks.edit") }
+											</a>
+											<form method="post" action={ templ.URL("/tasks/" + itoa(t.ID) + "/delete") } style="display:inline">
+												<button class="button is-small is-danger" type="submit">
+													@icons.Trash2()
+													{ i18n.T(ctx, "tasks.delete") }
+												</button>
+											</form>
+										</td>
+									</tr>
+								}
 							}
-						}
-					</tbody>
-				</table>
+						</tbody>
+					</table>
+				</div>
 			</div>
 		</section>
 		<script src="/static/js/task-filter.js"></script>
