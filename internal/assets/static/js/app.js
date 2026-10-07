@@ -12,3 +12,13 @@ document.addEventListener("keydown", function (event) {
 		}
 	}
 });
+
+// Mobile navbar: a .navbar-burger toggles the menu named by its data-target.
+for (const burger of document.querySelectorAll(".navbar-burger")) {
+	burger.addEventListener("click", function () {
+		const menu = document.getElementById(burger.dataset.target);
+		const open = burger.classList.toggle("is-active");
+		menu.classList.toggle("is-active", open);
+		burger.setAttribute("aria-expanded", String(open));
+	});
+}
